@@ -101,6 +101,7 @@ export type FrontendSettings = {
     auth_enabled?: string | null;
     feedback_enabled?: string | null;
     header_title?: string | null;
+    page_tab_title?: string | null;
 }
 
 export enum Feedback {
