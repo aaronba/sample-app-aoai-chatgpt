@@ -41,6 +41,12 @@ const Layout = () => {
 
     useEffect(() => { }, [appStateContext?.state.isCosmosDBAvailable.status]);
 
+    useEffect(() => {
+        let title = appStateContext?.state.frontendSettings?.page_tab_title ?? "Configure Page Tab Title";
+        console.log("Page Tab Title setting: " + appStateContext?.state.frontendSettings?.page_tab_title);
+        document.title = title.toString();
+    }, [appStateContext?.state.frontendSettings?.page_tab_title]);
+
     return (
         <div className={styles.layout}>
             <header className={styles.header} role={"banner"}>
