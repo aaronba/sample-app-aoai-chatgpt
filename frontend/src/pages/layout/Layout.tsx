@@ -2,7 +2,7 @@ import { Outlet, Link } from "react-router-dom";
 import styles from "./Layout.module.css";
 import Octo from "../../assets/octo.png"
 import { CopyRegular } from "@fluentui/react-icons";
-import { Dialog, Stack, TextField, ChoiceGroup, IChoiceGroupOption, Toggle } from "@fluentui/react";
+import { DefaultButton, PrimaryButton, Dialog, Stack, TextField, ChoiceGroup, IChoiceGroupOption, Toggle } from "@fluentui/react";
 import { useContext, useEffect, useState } from "react";
 import { HistoryButton, ShareButton, SettingsButton } from "../../components/common/Button";
 import { AppStateContext } from "../../state/AppProvider";
@@ -51,8 +51,15 @@ const Layout = () => {
 
     const handleSaveSettingsClick = () => {
         var settings: FrontendSettings;
-      //  appStateContext?.state.frontendSettings.header_title = document.getElementById("HeaderTitleTextField")?.innerText;
-        appStateContext?.dispatch({ type: 'SET_FRONTEND_SETTINGS', payload: appStateContext?.state.frontendSettings })
+        settings = {
+            auth_enabled: "false",
+            feedback_enabled: "false",
+            header_title: document.getElementById("HeaderTitleTextField")?.innerText,
+            page_tab_title: document.getElementById("PageTabTitleTextField")?.innerText,
+            ai_model_name: "gpt-35-turbo"
+        }
+        appStateContext?.dispatch({ type: 'SET_FRONTEND_SETTINGS', payload: settings });
+
         setSaveSettingsClicked(true);
         setSaveSettingsText("Settings saved.");
     };
@@ -184,24 +191,19 @@ const Layout = () => {
                         options={aiModelChoices}>
                     </ChoiceGroup>
                 </Stack>
-                <Stack horizontal verticalAlign="center" style={{ gap: "8px" }}>
-                    <span>""</span>
-                </Stack>
+                <br/>
                 <Stack horizontal verticalAlign="center" style={{ gap: "6px" }}>
-                    <button tabIndex={0}
-                            aria-label="Save"
-                            onClick={handleSaveSettingsClick}
-                            onKeyDown={e => e.key === "Enter" || e.key === " " ? handleSaveSettingsClick() : null} >
+                    <DefaultButton onClick={handleSaveSettingsClick}
+                                   onKeyDown={e => e.key === "Enter" || e.key === " " ? handleSaveSettingsClick() : null}>
                         Save
-                    </button>
-                    <button tabIndex={0}
-                            aria-label="Close"
-                            onClick={handleSettingsPanelDismiss}
-                            onKeyDown={e => e.key === "Enter" || e.key === " " ? handleSettingsPanelDismiss() : null} >
+                    </DefaultButton>
+                    <PrimaryButton onClick={handleSettingsPanelDismiss}
+                                   onKeyDown={e => e.key === "Enter" || e.key === " " ? handleSettingsPanelDismiss() : null}>
                         Close
-                    </button>
+                    </PrimaryButton>
                 </Stack>
-                <Stack horizontal verticalAlign="center" style={{ gap: "8px" }}>
+                <br></br>
+                <Stack horizontal verticalAlign="center" style={{ gap: "8px", color: "red", fontStyle: "italic" }}>
                     <span>{saveSettingsText}</span>
                 </Stack>
             </Dialog>            
