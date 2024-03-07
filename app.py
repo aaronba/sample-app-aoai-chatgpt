@@ -120,11 +120,13 @@ ELASTICSEARCH_EMBEDDING_MODEL_ID = os.environ.get("ELASTICSEARCH_EMBEDDING_MODEL
 AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "true").lower() == "true"
 HEADER_TITLE = os.environ.get("HEADER_TITLE", "VA Office of the CTO")
 PAGE_TAB_TITLE = os.environ.get("PAGE_TAB_TITLE", "VA Chat Room")
+AI_MODEL_NAME = os.environ.get("AI_MODEL_NAME", "gpt-35-turbo")
 frontend_settings = { 
     "auth_enabled": AUTH_ENABLED, 
     "feedback_enabled": AZURE_COSMOSDB_ENABLE_FEEDBACK and AZURE_COSMOSDB_DATABASE not in [None, ""],
     "header_title": HEADER_TITLE,
-    "page_tab_title": PAGE_TAB_TITLE
+    "page_tab_title": PAGE_TAB_TITLE,
+    "ai_model_name": AI_MODEL_NAME
 }
 
 message_uuid = ""

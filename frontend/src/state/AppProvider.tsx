@@ -1,6 +1,6 @@
 import React, { createContext, useReducer, ReactNode, useEffect } from 'react';
 import { appStateReducer } from './AppReducer';
-import { Conversation, ChatHistoryLoadingState, CosmosDBHealth, historyList, historyEnsure, CosmosDBStatus, frontendSettings, FrontendSettings, Feedback } from '../api';
+import { Conversation, ChatHistoryLoadingState, CosmosDBHealth, historyList, historyEnsure, CosmosDBStatus, readFrontendSettings, writeFrontendSettings, FrontendSettings, Feedback } from '../api';
   
 export interface AppState {
     isChatHistoryOpen: boolean;
@@ -26,6 +26,7 @@ export type Action =
     | { type: 'DELETE_CURRENT_CHAT_MESSAGES', payload: string }  // API Call
     | { type: 'FETCH_CHAT_HISTORY', payload: Conversation[] | null }  // API Call
     | { type: 'FETCH_FRONTEND_SETTINGS', payload: FrontendSettings | null }  // API Call
+    | { type: 'SET_FRONTEND_SETTINGS', payload: FrontendSettings | null } // API Call
     | { type: 'SET_FEEDBACK_STATE'; payload: { answerId: string; feedback: Feedback.Positive | Feedback.Negative | Feedback.Neutral } }
     | { type: 'GET_FEEDBACK_STATE'; payload: string };
 
@@ -108,14 +109,26 @@ type AppStateProviderProps = {
 
     useEffect(() => {
         const getFrontendSettings = async () => {
-            frontendSettings().then((response) => {
+            readFrontendSettings().then((response) => {
                 dispatch({ type: 'FETCH_FRONTEND_SETTINGS', payload: response as FrontendSettings });
             })
             .catch((err) => {
-                console.error("There was an issue fetching your data.");
+                console.error("There was an issue retrieving the frontend settings.  " + err );
             })
         }
         getFrontendSettings();
+    }, []);
+
+    useEffect(() => {
+        const setFrontendSettings = async () => {
+            writeFrontendSettings(state.frontendSettings!).then((response) => {
+                dispatch({ type: 'SET_FRONTEND_SETTINGS', payload: response as FrontendSettings });
+            })
+            .catch((err) => {
+                console.error("There was an issue updating the frontend settings.  " + err);
+            })
+        }
+        setFrontendSettings();
     }, []);
   
     return (

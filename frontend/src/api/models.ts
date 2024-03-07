@@ -102,6 +102,7 @@ export type FrontendSettings = {
     feedback_enabled?: string | null;
     header_title?: string | null;
     page_tab_title?: string | null;
+    ai_model_name?: string | null;
 }
 
 export enum Feedback {

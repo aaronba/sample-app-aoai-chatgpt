@@ -1,4 +1,4 @@
-import { UserInfo, ConversationRequest, Conversation, ChatMessage, CosmosDBHealth, CosmosDBStatus } from "./models";
+import { UserInfo, ConversationRequest, Conversation, ChatMessage, CosmosDBHealth, CosmosDBStatus, FrontendSettings } from "./models";
 import { chatHistorySampleData } from "../constants/chatHistory";
 
 export async function conversationApi(options: ConversationRequest, abortSignal: AbortSignal): Promise<Response> {
@@ -298,7 +298,7 @@ export const historyEnsure = async (): Promise<CosmosDBHealth> => {
     return response;
 }
 
-export const frontendSettings = async (): Promise<Response | null> => {
+export const readFrontendSettings = async (): Promise<Response | null> => {
     const response = await fetch("/frontend_settings", {
         method: "GET",
     }).then((res) => {
@@ -310,6 +310,32 @@ export const frontendSettings = async (): Promise<Response | null> => {
 
     return response
 }
+
+export const writeFrontendSettings = async (frontendSettings: FrontendSettings): Promise<Response> => {
+    const response = await fetch("/frontend_settings", {
+        method: "POST",
+        body: JSON.stringify({
+            HEADER_TITLE: frontendSettings.header_title,
+        }),
+        headers: {
+            "Content-Type": "application/json"
+        },
+    })
+    .then((res) => {
+        return res
+    })
+    .catch((err) => {
+        console.error("There was an issue updating frontend settings.");
+        let errRes: Response = {
+            ...new Response,
+            ok: false,
+            status: 500,
+        }
+        return errRes;
+    })
+    return response;
+}
+
 export const historyMessageFeedback = async (messageId: string, feedback: string): Promise<Response> => {
     const response = await fetch("/history/message_feedback", {
         method: "POST",

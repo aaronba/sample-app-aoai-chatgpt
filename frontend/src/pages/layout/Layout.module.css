@@ -70,6 +70,49 @@
     color: #FFFFFF;
 }
 
+.settingsButtonContainer {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 5px 12px;
+    gap: 4px;
+    width: 86px;
+    height: 32px;
+    background: radial-gradient(109.81% 107.82% at 100.1% 90.19%, #8e8f8f 33.63%, #8e8f8f 70.31%, #8e8f8f 100%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */;
+    border-radius: 4px;
+    flex: none;
+    order: 1;
+    flex-grow: 0;
+    position: absolute;
+    right: 20px;
+    cursor: pointer;
+}
+
+.settingsButton {
+    color: #FFFFFF;
+}
+
+.settingsButtonText {
+    font-style: normal;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    color: #FFFFFF;
+}
+
+.settingsTextBox {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    color: #707070;
+    border: 1px solid #D1D1D1;
+    border-radius: 4px;
+}
+
 .urlTextBox {
     font-style: normal;
     font-weight: 400;
