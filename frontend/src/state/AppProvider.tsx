@@ -53,7 +53,7 @@ type AppStateProviderProps = {
     children: ReactNode;
   };
   
-  export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) => {
+export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) => {
     const [state, dispatch] = useReducer(appStateReducer, initialState);
 
     useEffect(() => {
@@ -110,7 +110,7 @@ type AppStateProviderProps = {
     useEffect(() => {
         const getFrontendSettings = async () => {
             readFrontendSettings().then((response) => {
-                dispatch({ type: 'FETCH_FRONTEND_SETTINGS', payload: response as FrontendSettings });
+                dispatch({ type: 'FETCH_FRONTEND_SETTINGS', payload: response });
             })
             .catch((err) => {
                 console.error("There was an issue retrieving the frontend settings.  " + err );
@@ -118,24 +118,12 @@ type AppStateProviderProps = {
         }
         getFrontendSettings();
     }, []);
-
-    useEffect(() => {
-        const setFrontendSettings = async () => {
-            writeFrontendSettings(state.frontendSettings!).then((response) => {
-                dispatch({ type: 'SET_FRONTEND_SETTINGS', payload: response as FrontendSettings });
-            })
-            .catch((err) => {
-                console.error("There was an issue updating the frontend settings.  " + err);
-            })
-        }
-        setFrontendSettings();
-    }, []);
   
     return (
       <AppStateContext.Provider value={{ state, dispatch }}>
         {children}
       </AppStateContext.Provider>
     );
-  };
+};
 
 

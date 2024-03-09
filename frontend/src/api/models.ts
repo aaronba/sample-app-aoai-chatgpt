@@ -98,8 +98,8 @@ export type ErrorMessage = {
 }
 
 export type FrontendSettings = {
-    auth_enabled?: string | null;
-    feedback_enabled?: string | null;
+    auth_enabled: boolean;
+    feedback_enabled: boolean;
     header_title?: string | null;
     page_tab_title?: string | null;
     ai_model_name?: string | null;

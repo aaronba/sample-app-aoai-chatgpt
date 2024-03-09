@@ -886,14 +886,30 @@ def ensure_cosmos():
 
     return jsonify({"message": "CosmosDB is configured and working"}), 200
 
-@app.route("/frontend_settings", methods=["GET"])  
-def get_frontend_settings():
+@app.route("/frontend_settings/read", methods=["GET"])  
+def read_frontend_settings():
     try:
         return jsonify(frontend_settings), 200
     except Exception as e:
         logging.exception("Exception in /frontend_settings")
         return jsonify({"error": str(e)}), 500  
 
+@app.route("/frontend_settings/write", methods=["POST"]) 
+def write_frontend_settings():
+    try:
+        logging.debug("Handling request to save frontend settings...")
+        os.environ["AUTH_ENABLED"] = request.json["auth_enabled"]
+        os.environ["FEEDBACK_ENABLED"] = request.json["feedback_enabled"]
+        os.environ["HEADER_TITLE"] = request.json["header_title"]
+        os.environ["PAGE_TAB_TITLE"] = request.json["header_title"]
+        os.environ["AI_MODEL_NAME"] = request.json["ai_model_name"]
+        logging.debug("Frontend settings have been saved.")
+
+        return jsonify(request.json), 200
+    except Exception as e:
+        logging.exception("Exception in /frontend_settings_save")
+        return jsonify({"error": str(e)}), 500  
+    
 def generate_title(conversation_messages):
     ## make sure the messages are sorted by _ts descending
     title_prompt = 'Summarize the conversation so far into a 4-word or less title. Do not use any quotation marks or punctuation. Respond with a json object in the format {{"title": string}}. Do not include any other commentary or description.'

@@ -298,8 +298,8 @@ export const historyEnsure = async (): Promise<CosmosDBHealth> => {
     return response;
 }
 
-export const readFrontendSettings = async (): Promise<Response | null> => {
-    const response = await fetch("/frontend_settings", {
+export const readFrontendSettings = async (): Promise<FrontendSettings> => {
+    const response = await fetch("/frontend_settings/read", {
         method: "GET",
     }).then((res) => {
         return res.json()
@@ -312,14 +312,18 @@ export const readFrontendSettings = async (): Promise<Response | null> => {
 }
 
 export const writeFrontendSettings = async (frontendSettings: FrontendSettings): Promise<Response> => {
-    const response = await fetch("/frontend_settings", {
+    const response = await fetch("/frontend_settings/write", {
         method: "POST",
-        body: JSON.stringify({
-            HEADER_TITLE: frontendSettings.header_title,
-        }),
         headers: {
             "Content-Type": "application/json"
         },
+        body: JSON.stringify({
+            AUTH_ENABLED: frontendSettings.auth_enabled,
+            FEEDBACK_ENABLED: frontendSettings.feedback_enabled,
+            HEADER_TITLE: frontendSettings.header_title,
+            PAGE_TAB_TITLE: frontendSettings.page_tab_title,
+            AI_MODEL_NAME: frontendSettings.ai_model_name
+        })
     })
     .then((res) => {
         return res

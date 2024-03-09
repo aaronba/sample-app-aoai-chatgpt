@@ -6,7 +6,7 @@ import { DefaultButton, PrimaryButton, Dialog, Stack, TextField, ChoiceGroup, IC
 import { useContext, useEffect, useState } from "react";
 import { HistoryButton, ShareButton, SettingsButton } from "../../components/common/Button";
 import { AppStateContext } from "../../state/AppProvider";
-import { CosmosDBStatus, FrontendSettings } from "../../api";
+import { CosmosDBStatus, FrontendSettings, writeFrontendSettings } from "../../api";
 
 const Layout = () => {
     const [isSharePanelOpen, setIsSharePanelOpen] = useState<boolean>(false);
@@ -15,6 +15,11 @@ const Layout = () => {
     const [copyText, setCopyText] = useState<string>("Copy URL");
     const [saveSettingsClicked, setSaveSettingsClicked] = useState<boolean>(false);
     const [saveSettingsText, setSaveSettingsText] = useState<string>("");
+    const [authEnabled, setAuthEnabled] = useState<boolean>(false);
+    const [feedbackEnabled, setFeedbackEnabled] = useState<boolean>(false);
+    const [headerTitle, setHeaderTitle] = useState<string>("");
+    const [pageTabTitle, setPageTabTitle] = useState<string>("");
+    const [aiModelName, setAIModelName] = useState<string>("");
     const appStateContext = useContext(AppStateContext);
     const aiModelChoices: IChoiceGroupOption[] = [
         {key: "gpt-35-turbo", text: "gpt-35-turbo"},
@@ -33,6 +38,13 @@ const Layout = () => {
 
     const handleSettingsClick = () => {
         setIsSettingsPanelOpen(true);
+
+        // Set controls to values in appsettings.json
+        setAuthEnabled(appStateContext?.state.frontendSettings?.auth_enabled == true ? true : false);
+        setFeedbackEnabled(appStateContext?.state.frontendSettings?.feedback_enabled == true ? true : false);
+        setHeaderTitle(appStateContext?.state.frontendSettings?.header_title!);
+        setPageTabTitle(appStateContext?.state.frontendSettings?.page_tab_title!);
+        setAIModelName(appStateContext?.state.frontendSettings?.ai_model_name!);
     };
 
     const handleSettingsPanelDismiss = () => {
@@ -49,20 +61,49 @@ const Layout = () => {
         appStateContext?.dispatch({ type: 'TOGGLE_CHAT_HISTORY' })
     };
 
-    const handleSaveSettingsClick = () => {
-        var settings: FrontendSettings;
-        settings = {
-            auth_enabled: "false",
-            feedback_enabled: "false",
-            header_title: document.getElementById("HeaderTitleTextField")?.innerText,
-            page_tab_title: document.getElementById("PageTabTitleTextField")?.innerText,
-            ai_model_name: "gpt-35-turbo"
+    const saveFrontendSettings = async () => {
+        const settings: FrontendSettings = {
+            auth_enabled: authEnabled,
+            feedback_enabled: feedbackEnabled,
+            header_title: headerTitle,
+            page_tab_title: pageTabTitle,
+            ai_model_name: aiModelName
         }
-        appStateContext?.dispatch({ type: 'SET_FRONTEND_SETTINGS', payload: settings });
 
+        // Save the updated settings to appsettings.json file
+        writeFrontendSettings(settings).then((response) => {
+            appStateContext?.dispatch({ type: 'SET_FRONTEND_SETTINGS', payload: settings });
+        })
+        .catch((err) => {
+            console.error("There was an issue saving the updated frontend settings.  " + err);
+        })
+    }
+
+    const handleSaveSettingsClick = () => {
+        saveFrontendSettings();
         setSaveSettingsClicked(true);
         setSaveSettingsText("Settings saved.");
     };
+
+    const handleAuthEnabledChange = (event: any, checked?: boolean | undefined) => {
+        setAuthEnabled(checked!);
+    }
+
+    const handleFeedbackEnabledChange = (event: any, checked?: boolean | undefined) => {
+        setFeedbackEnabled(checked!);
+    }
+
+    const handleHeaderTitleChange = (event: any, newValue?: string | undefined) => {
+        setHeaderTitle(newValue!);
+    }
+
+    const handlePageTabTitleChange = (event: any, newValue?: string | undefined) => {
+        setPageTabTitle(newValue!);
+    }
+
+    const handleAIModelNameChange = (event: any, option?: IChoiceGroupOption | undefined) => {
+        setAIModelName(option?.text!);
+    }
 
     useEffect(() => {
         if (copyClicked) {
@@ -155,12 +196,12 @@ const Layout = () => {
                                 background: "#FFFFFF",
                                 boxShadow: "0px 14px 28.8px rgba(0, 0, 0, 0.24), 0px 0px 8px rgba(0, 0, 0, 0.2)",
                                 borderRadius: "8px",
-                                maxHeight: '600px',
-                                minHeight: '400px',
+                                maxHeight: '650px',
+                                minHeight: '450px',
                                 maxWidth: '500px',
                                 minWidth: '300px',
                                 width: '400px',
-                                height: '500px',
+                                height: '550px',
                             }
                         }
                     }]
@@ -174,25 +215,30 @@ const Layout = () => {
                     <Toggle 
                         id="AuthEnabledToggle"
                         label={"Auth Enabled?"} 
-                        defaultChecked={appStateContext?.state.frontendSettings?.auth_enabled == "True" ? true : false}>
+                        onChange={handleAuthEnabledChange}
+                        checked={authEnabled}
+                        disabled={true}> 
                     </Toggle>
                     <Toggle 
                         id="FeedbackEnabledToggle"
                         label={"Feedback Enabled?"} 
-                        defaultChecked={appStateContext?.state.frontendSettings?.feedback_enabled == "True" ? true : false}>
+                        onChange={handleFeedbackEnabledChange}
+                        checked={feedbackEnabled}
+                        disabled={true}>
                     </Toggle>
-                    <TextField id="HeaderTitleTextField" label="Header Title" defaultValue={appStateContext?.state.frontendSettings?.header_title!} />
-                    <TextField id="PageTabTitleTextField" label="Page Tab Title" defaultValue={appStateContext?.state.frontendSettings?.page_tab_title!} />
+                    <TextField id="HeaderTitleTextField" label="Header Title" value={headerTitle} onChange={handleHeaderTitleChange} />
+                    <TextField id="PageTabTitleTextField" label="Page Tab Title" value={pageTabTitle} onChange={handlePageTabTitleChange} />
                     <ChoiceGroup 
                         id="AIModelNameChoiceGroup"
                         label="AI Model Name"
                         styles={{flexContainer: [{flexDirection: "row"}]}}
-                        defaultSelectedKey={appStateContext?.state.frontendSettings?.ai_model_name!}
+                        defaultSelectedKey={aiModelName}
+                        onChange={handleAIModelNameChange}
                         options={aiModelChoices}>
                     </ChoiceGroup>
                 </Stack>
                 <br/>
-                <Stack horizontal verticalAlign="center" style={{ gap: "6px" }}>
+                <Stack horizontal verticalAlign="center" horizontalAlign="end" style={{ gap: "6px" }}>
                     <DefaultButton onClick={handleSaveSettingsClick}
                                    onKeyDown={e => e.key === "Enter" || e.key === " " ? handleSaveSettingsClick() : null}>
                         Save
@@ -203,7 +249,7 @@ const Layout = () => {
                     </PrimaryButton>
                 </Stack>
                 <br></br>
-                <Stack horizontal verticalAlign="center" style={{ gap: "8px", color: "red", fontStyle: "italic" }}>
+                <Stack horizontal verticalAlign="center" horizontalAlign="center" style={{ gap: "8px", color: "red", fontStyle: "italic" }}>
                     <span>{saveSettingsText}</span>
                 </Stack>
             </Dialog>            
