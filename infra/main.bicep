@@ -332,6 +332,7 @@ output AZURE_FORMRECOGNIZER_SKU_NAME string = docPrepResources.outputs.AZURE_FOR
 // cosmos
 output AZURE_COSMOSDB_ACCOUNT string = cosmos.outputs.accountName
 output AZURE_COSMOSDB_DATABASE string = cosmos.outputs.databaseName
-output AZURE_COSMOSDB_CONVERSATIONS_CONTAINER string = cosmos.outputs.containerName
+output AZURE_COSMOSDB_CONVERSATIONS_CONTAINER string = cosmos.outputs.conversationsContainerName
+output AZURE_COSMOSDB_USERSETTINGS_CONTAINER string = cosmos.outputs.usersettingsContainerName
 
 output AUTH_ISSUER_URI string = authIssuerUri

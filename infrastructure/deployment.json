@@ -361,7 +361,8 @@
         "WebAppImageName": "DOCKER|fruoccopublic.azurecr.io/sample-app-aoai-chatgpt:latest",
         "cosmosdb_account_name": "[format('db-{0}', parameters('WebsiteName'))]",
         "cosmosdb_database_name": "db_conversation_history",
-        "cosmosdb_container_name": "conversations",
+        "cosmosdb_conversations_container_name": "conversations",
+        "cosmosdb_usersettings_container_name": "front_end_settings",
         "roleDefinitionId": "00000000-0000-0000-0000-000000000002", // Cosmos DB Built-in Data Contributor Role
         "roleAssignmentId": "[guid(variables('roleDefinitionId'), parameters('WebsiteName'), resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name')))]"
     },
@@ -525,7 +526,11 @@
                         },
                         {
                             "name": "AZURE_COSMOSDB_CONVERSATIONS_CONTAINER",
-                            "value": "[variables('cosmosdb_container_name')]"
+                            "value": "[variables('cosmosdb_conversations_container_name')]"
+                        },
+                        {
+                            "name": "AZURE_COSMOSDB_USERSETTINGS_CONTAINER",
+                            "value": "[variables('cosmosdb_usersettings_container_name')]"
                         },
                         {
                             "name": "ELASTICSEARCH_ENDPOINT",

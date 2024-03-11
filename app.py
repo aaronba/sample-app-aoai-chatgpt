@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 from backend.auth.auth_utils import get_authenticated_user_details
 from backend.history.cosmosdbservice import CosmosConversationClient
+from backend.usersettings.cosmosdbserviceUserSettings import CosmosUserSettingsClient
 
 load_dotenv()
 
@@ -90,13 +91,13 @@ AZURE_COSMOSDB_MONGO_VCORE_TITLE_COLUMN = os.environ.get("AZURE_COSMOSDB_MONGO_V
 AZURE_COSMOSDB_MONGO_VCORE_URL_COLUMN = os.environ.get("AZURE_COSMOSDB_MONGO_VCORE_URL_COLUMN")
 AZURE_COSMOSDB_MONGO_VCORE_VECTOR_COLUMNS = os.environ.get("AZURE_COSMOSDB_MONGO_VCORE_VECTOR_COLUMNS")
 
-
 SHOULD_STREAM = True if AZURE_OPENAI_STREAM.lower() == "true" else False
 
 # Chat History CosmosDB Integration Settings
 AZURE_COSMOSDB_DATABASE = os.environ.get("AZURE_COSMOSDB_DATABASE")
 AZURE_COSMOSDB_ACCOUNT = os.environ.get("AZURE_COSMOSDB_ACCOUNT")
 AZURE_COSMOSDB_CONVERSATIONS_CONTAINER = os.environ.get("AZURE_COSMOSDB_CONVERSATIONS_CONTAINER")
+AZURE_COSMOSDB_USERSETTINGS_CONTAINER = os.environ.get("AZURE_COSMOSDB_USERSETTINGS_CONTAINER")
 AZURE_COSMOSDB_ACCOUNT_KEY = os.environ.get("AZURE_COSMOSDB_ACCOUNT_KEY")
 AZURE_COSMOSDB_ENABLE_FEEDBACK = os.environ.get("AZURE_COSMOSDB_ENABLE_FEEDBACK", "false").lower() == "true"
 AZURE_COSMOSDB_SUFFIX = os.environ.get("AZURE_COSMOSDB_SUFFIX", ".us")
@@ -116,24 +117,13 @@ ELASTICSEARCH_VECTOR_COLUMNS = os.environ.get("ELASTICSEARCH_VECTOR_COLUMNS")
 ELASTICSEARCH_STRICTNESS = os.environ.get("ELASTICSEARCH_STRICTNESS", SEARCH_STRICTNESS)
 ELASTICSEARCH_EMBEDDING_MODEL_ID = os.environ.get("ELASTICSEARCH_EMBEDDING_MODEL_ID")
 
-# Frontend Settings via Environment Variables
-AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "true").lower() == "true"
-HEADER_TITLE = os.environ.get("HEADER_TITLE", "VA Office of the CTO")
-PAGE_TAB_TITLE = os.environ.get("PAGE_TAB_TITLE", "VA Chat Room")
-AI_MODEL_NAME = os.environ.get("AI_MODEL_NAME", "gpt-35-turbo")
-frontend_settings = { 
-    "auth_enabled": AUTH_ENABLED, 
-    "feedback_enabled": AZURE_COSMOSDB_ENABLE_FEEDBACK and AZURE_COSMOSDB_DATABASE not in [None, ""],
-    "header_title": HEADER_TITLE,
-    "page_tab_title": PAGE_TAB_TITLE,
-    "ai_model_name": AI_MODEL_NAME
-}
-
 message_uuid = ""
 
-# Initialize a CosmosDB client with AAD auth and containers for Chat History
+# Initialize a CosmosDB client with AAD auth and containers for Chat History and User Settings
 cosmos_conversation_client = None
-if AZURE_COSMOSDB_DATABASE and AZURE_COSMOSDB_ACCOUNT and AZURE_COSMOSDB_CONVERSATIONS_CONTAINER:
+cosmos_usersettings_client = None
+
+if AZURE_COSMOSDB_DATABASE and AZURE_COSMOSDB_ACCOUNT and AZURE_COSMOSDB_CONVERSATIONS_CONTAINER and AZURE_COSMOSDB_USERSETTINGS_CONTAINER:
     try :
         cosmos_endpoint = f'https://{AZURE_COSMOSDB_ACCOUNT}.documents.azure{AZURE_COSMOSDB_SUFFIX}:443/'
 
@@ -149,10 +139,17 @@ if AZURE_COSMOSDB_DATABASE and AZURE_COSMOSDB_ACCOUNT and AZURE_COSMOSDB_CONVERS
             container_name=AZURE_COSMOSDB_CONVERSATIONS_CONTAINER,
             enable_message_feedback = AZURE_COSMOSDB_ENABLE_FEEDBACK
         )
+
+        cosmos_usersettings_client = CosmosUserSettingsClient(
+            cosmosdb_endpoint=cosmos_endpoint, 
+            credential=credential, 
+            database_name=AZURE_COSMOSDB_DATABASE,
+            container_name=AZURE_COSMOSDB_USERSETTINGS_CONTAINER
+        )
     except Exception as e:
         logging.exception("Exception in CosmosDB initialization", e)
         cosmos_conversation_client = None
-
+        cosmos_usersettings_client = None
 
 def is_chat_model():
     if 'gpt-4' in AZURE_OPENAI_MODEL_NAME.lower() or AZURE_OPENAI_MODEL_NAME.lower() in ['gpt-35-turbo-4k', 'gpt-35-turbo-16k']:
@@ -888,7 +885,48 @@ def ensure_cosmos():
 
 @app.route("/frontend_settings/read", methods=["GET"])  
 def read_frontend_settings():
-    try:
+    try:       
+        # Default Frontend Settings via Environment Variables
+        AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "True") == "True"
+        FEEDBACK_ENABLED = AZURE_COSMOSDB_ENABLE_FEEDBACK and AZURE_COSMOSDB_DATABASE not in [None, ""]
+        HEADER_TITLE = os.environ.get("HEADER_TITLE", "VA Office of the CTO")
+        PAGE_TAB_TITLE = os.environ.get("PAGE_TAB_TITLE", "VA Chat Room")
+        AI_MODEL_NAME = os.environ.get("AI_MODEL_NAME", "gpt-35-turbo")
+
+        logging.debug(f"Auth Enabled?  {AUTH_ENABLED}")
+
+        if AUTH_ENABLED:
+            ## Check if there are any user specific values
+            authenticated_user = get_authenticated_user_details(request_headers=request.headers)
+            user_id = authenticated_user['user_principal_id']
+            logging.debug(f"Retrieving any user settings for {user_id}")
+
+            # Retrieve any user settings for this user from cosmos
+            user_settings = cosmos_usersettings_client.get_user_settings(user_id)
+
+            if user_settings:
+                for setting in user_settings:
+                    key = setting['key']
+                    match key:
+                        case 'AUTH_ENABLED':
+                            AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "True") == "True" ## User cannot override
+                        case 'FEEDBACK_ENABLED':
+                            FEEDBACK_ENABLED = setting['value']
+                        case 'HEADER_TITLE':
+                            HEADER_TITLE = setting['value']
+                        case 'PAGE_TAB_TITLE':
+                            PAGE_TAB_TITLE = setting['value']
+                        case 'AI_MODEL_NAME':
+                            AI_MODEL_NAME = setting['value']
+
+        frontend_settings = { 
+            "auth_enabled": AUTH_ENABLED, 
+            "feedback_enabled": FEEDBACK_ENABLED,
+            "header_title": HEADER_TITLE,
+            "page_tab_title": PAGE_TAB_TITLE,
+            "ai_model_name": AI_MODEL_NAME
+        }
+
         return jsonify(frontend_settings), 200
     except Exception as e:
         logging.exception("Exception in /frontend_settings")
@@ -898,11 +936,17 @@ def read_frontend_settings():
 def write_frontend_settings():
     try:
         logging.debug("Handling request to save frontend settings...")
-        os.environ["AUTH_ENABLED"] = request.json["auth_enabled"]
-        os.environ["FEEDBACK_ENABLED"] = request.json["feedback_enabled"]
-        os.environ["HEADER_TITLE"] = request.json["header_title"]
-        os.environ["PAGE_TAB_TITLE"] = request.json["header_title"]
-        os.environ["AI_MODEL_NAME"] = request.json["ai_model_name"]
+
+        authenticated_user = get_authenticated_user_details(request_headers=request.headers)
+        user_id = authenticated_user['user_principal_id']
+
+        # Create(upsert) user settings for this user in Cosmos DB
+        cosmos_usersettings_client.create_user_setting(user_id, "AUTH_ENABLED", "True" if request.json["AUTH_ENABLED"] else "False")
+        cosmos_usersettings_client.create_user_setting(user_id, "FEEDBACK_ENABLED", "True" if request.json["FEEDBACK_ENABLED"] else "False")
+        cosmos_usersettings_client.create_user_setting(user_id, "HEADER_TITLE", request.json["HEADER_TITLE"])
+        cosmos_usersettings_client.create_user_setting(user_id, "PAGE_TAB_TITLE", request.json["PAGE_TAB_TITLE"])
+        cosmos_usersettings_client.create_user_setting(user_id, "AI_MODEL_NAME", request.json["AI_MODEL_NAME"])
+
         logging.debug("Frontend settings have been saved.")
 
         return jsonify(request.json), 200
