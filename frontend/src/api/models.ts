@@ -102,7 +102,8 @@ export type FrontendSettings = {
     feedback_enabled: boolean;
     header_title?: string | null;
     page_tab_title?: string | null;
-    ai_model_name?: string | null;
+    azure_openai_models?: string | null;
+    azure_openai_model?: string | null;
 }
 
 export enum Feedback {

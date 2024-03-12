@@ -43,6 +43,7 @@ const enum messageStatus {
 const Chat = () => {
     const appStateContext = useContext(AppStateContext)
     const AUTH_ENABLED = appStateContext?.state.frontendSettings?.auth_enabled;
+    const AZURE_OPENAI_MODEL = appStateContext?.state.frontendSettings?.azure_openai_model!;
     const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [showLoadingMessage, setShowLoadingMessage] = useState<boolean>(false);
@@ -175,7 +176,7 @@ const Chat = () => {
 
         let result = {} as ChatResponse;
         try {
-            const response = await conversationApi(request, abortController.signal);
+            const response = await conversationApi(request, abortController.signal, AZURE_OPENAI_MODEL);
             if (response?.body) {
                 const reader = response.body.getReader();
                 let runningText = "";
@@ -278,7 +279,7 @@ const Chat = () => {
         }
         let result = {} as ChatResponse;
         try {
-            const response = conversationId ? await historyGenerate(request, abortController.signal, conversationId) : await historyGenerate(request, abortController.signal);
+            const response = conversationId ? await historyGenerate(request, abortController.signal, conversationId, AZURE_OPENAI_MODEL) : await historyGenerate(request, abortController.signal);
             if (!response?.ok) {
                 let errorChatMsg: ChatMessage = {
                     id: uuid(),

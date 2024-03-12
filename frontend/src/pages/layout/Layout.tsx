@@ -3,7 +3,7 @@ import styles from "./Layout.module.css";
 import Octo from "../../assets/octo.png"
 import { CopyRegular } from "@fluentui/react-icons";
 import { DefaultButton, PrimaryButton, Dialog, Stack, TextField, ChoiceGroup, IChoiceGroupOption, Toggle } from "@fluentui/react";
-import { useContext, useEffect, useState } from "react";
+import { SetStateAction, useContext, useEffect, useState } from "react";
 import { HistoryButton, ShareButton, SettingsButton } from "../../components/common/Button";
 import { AppStateContext } from "../../state/AppProvider";
 import { CosmosDBStatus, FrontendSettings, writeFrontendSettings } from "../../api";
@@ -19,12 +19,10 @@ const Layout = () => {
     const [feedbackEnabled, setFeedbackEnabled] = useState<boolean>(false);
     const [headerTitle, setHeaderTitle] = useState<string>("");
     const [pageTabTitle, setPageTabTitle] = useState<string>("");
-    const [aiModelName, setAIModelName] = useState<string>("");
+    const [aiModels, setAIModels] = useState<string>("");
+    const [aiModel, setAIModel] = useState<string>("");
+    const [aiModelChoices, setAIModelChoices] = useState<IChoiceGroupOption[]>([]);
     const appStateContext = useContext(AppStateContext);
-    const aiModelChoices: IChoiceGroupOption[] = [
-        {key: "gpt-35-turbo", text: "gpt-35-turbo"},
-        {key: "gpt-4", text: "gpt-4"}
-    ];
 
     const handleShareClick = () => {
         setIsSharePanelOpen(true);
@@ -44,7 +42,19 @@ const Layout = () => {
         setFeedbackEnabled(appStateContext?.state.frontendSettings?.feedback_enabled == true ? true : false);
         setHeaderTitle(appStateContext?.state.frontendSettings?.header_title!);
         setPageTabTitle(appStateContext?.state.frontendSettings?.page_tab_title!);
-        setAIModelName(appStateContext?.state.frontendSettings?.ai_model_name!);
+        setAIModels(appStateContext?.state.frontendSettings?.azure_openai_models!);
+        setAIModel(appStateContext?.state.frontendSettings?.azure_openai_model!);
+    };
+
+    const splitChoices = (choices: string) => {
+        const modelList = choices.split(",");
+        let choiceGroup: IChoiceGroupOption[] = []; 
+
+        for (let i=0; i < modelList.length; i++) {
+            choiceGroup.push({key: modelList[i], text: modelList[i]});
+        }
+
+        return choiceGroup;
     };
 
     const handleSettingsPanelDismiss = () => {
@@ -67,7 +77,8 @@ const Layout = () => {
             feedback_enabled: feedbackEnabled,
             header_title: headerTitle,
             page_tab_title: pageTabTitle,
-            ai_model_name: aiModelName
+            azure_openai_models: aiModels,
+            azure_openai_model: aiModel
         }
 
         // Save the updated settings to appsettings.json file
@@ -101,8 +112,8 @@ const Layout = () => {
         setPageTabTitle(newValue!);
     }
 
-    const handleAIModelNameChange = (event: any, option?: IChoiceGroupOption | undefined) => {
-        setAIModelName(option?.text!);
+    const handleAIModelChange = (event: any, option?: IChoiceGroupOption | undefined) => {
+        setAIModel(option?.text!);
     }
 
     useEffect(() => {
@@ -124,6 +135,11 @@ const Layout = () => {
         console.log("Page Tab Title setting: " + appStateContext?.state.frontendSettings?.page_tab_title);
         document.title = title.toString();
     }, [appStateContext?.state.frontendSettings?.page_tab_title]);
+
+    useEffect(() => {
+        let choices = appStateContext?.state.frontendSettings?.azure_openai_models ?? "";
+        setAIModelChoices(splitChoices(choices));
+    }, [appStateContext?.state.frontendSettings?.azure_openai_models]);
 
     return (
         <div className={styles.layout}>
@@ -229,11 +245,11 @@ const Layout = () => {
                     <TextField id="HeaderTitleTextField" label="Header Title" value={headerTitle} onChange={handleHeaderTitleChange} />
                     <TextField id="PageTabTitleTextField" label="Page Tab Title" value={pageTabTitle} onChange={handlePageTabTitleChange} />
                     <ChoiceGroup 
-                        id="AIModelNameChoiceGroup"
-                        label="AI Model Name"
+                        id="AIModelChoiceGroup"
+                        label="AI Model"
                         styles={{flexContainer: [{flexDirection: "row"}]}}
-                        defaultSelectedKey={aiModelName}
-                        onChange={handleAIModelNameChange}
+                        selectedKey={aiModel}
+                        onChange={handleAIModelChange}
                         options={aiModelChoices}>
                     </ChoiceGroup>
                 </Stack>

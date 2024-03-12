@@ -546,7 +546,7 @@ def stream_without_data(response, history_metadata={}):
         yield format_as_ndjson(response_obj)
 
 
-def conversation_without_data(request_body):
+def conversation_without_data(request_body, model):
     openai.api_type = "azure"
     openai.api_base = AZURE_OPENAI_ENDPOINT if AZURE_OPENAI_ENDPOINT else f"https://{AZURE_OPENAI_RESOURCE}.openai.azure.com/"
     openai.api_version = "2023-08-01-preview"
@@ -568,7 +568,7 @@ def conversation_without_data(request_body):
             })
 
     response = openai.ChatCompletion.create(
-        engine=AZURE_OPENAI_MODEL,
+        engine=model, ## user selected in frontend settings
         messages = messages,
         temperature=float(AZURE_OPENAI_TEMPERATURE),
         max_tokens=int(AZURE_OPENAI_MAX_TOKENS),
@@ -602,15 +602,16 @@ def conversation_without_data(request_body):
 @app.route("/conversation", methods=["GET", "POST"])
 def conversation():
     request_body = request.json
-    return conversation_internal(request_body)
+    model = request.json.get("model", None);
+    return conversation_internal(request_body, model)
 
-def conversation_internal(request_body):
+def conversation_internal(request_body, model):
     try:
         use_data = should_use_data()
         if use_data:
             return conversation_with_data(request_body)
         else:
-            return conversation_without_data(request_body)
+            return conversation_without_data(request_body, model)
     except Exception as e:
         logging.exception("Exception in /conversation")
         return jsonify({"error": str(e)}), 500
@@ -623,8 +624,9 @@ def add_conversation():
     authenticated_user = get_authenticated_user_details(request_headers=request.headers)
     user_id = authenticated_user['user_principal_id']
 
-    ## check request for conversation_id
+    ## check request for conversation_id and Azure OpenAI Model
     conversation_id = request.json.get("conversation_id", None)
+    model = request.json.get("model", None);
 
     try:
         # make sure cosmos is configured
@@ -634,7 +636,7 @@ def add_conversation():
         # check for the conversation_id, if the conversation is not set, we will create a new one
         history_metadata = {}
         if not conversation_id:
-            title = generate_title(request.json["messages"])
+            title = generate_title(request.json["messages"], model)
             conversation_dict = cosmos_conversation_client.create_conversation(user_id=user_id, title=title)
             conversation_id = conversation_dict['id']
             history_metadata['title'] = title
@@ -657,7 +659,7 @@ def add_conversation():
         request_body = request.json
         history_metadata['conversation_id'] = conversation_id
         request_body['history_metadata'] = history_metadata
-        return conversation_internal(request_body)
+        return conversation_internal(request_body, model)
        
     except Exception as e:
         logging.exception("Exception in /history/generate")
@@ -891,9 +893,8 @@ def read_frontend_settings():
         FEEDBACK_ENABLED = AZURE_COSMOSDB_ENABLE_FEEDBACK and AZURE_COSMOSDB_DATABASE not in [None, ""]
         HEADER_TITLE = os.environ.get("HEADER_TITLE", "VA Office of the CTO")
         PAGE_TAB_TITLE = os.environ.get("PAGE_TAB_TITLE", "VA Chat Room")
-        AI_MODEL_NAME = os.environ.get("AI_MODEL_NAME", "gpt-35-turbo")
-
-        logging.debug(f"Auth Enabled?  {AUTH_ENABLED}")
+        AZURE_OPENAI_MODELS = os.environ.get("AZURE_OPENAI_MODELS", "gpt-35-turbo,gpt-4")
+        AZURE_OPENAI_MODEL = os.environ.get("AZURE_OPENAI_MODEL", "gpt-35-turbo")
 
         if AUTH_ENABLED:
             ## Check if there are any user specific values
@@ -916,15 +917,16 @@ def read_frontend_settings():
                             HEADER_TITLE = setting['value']
                         case 'PAGE_TAB_TITLE':
                             PAGE_TAB_TITLE = setting['value']
-                        case 'AI_MODEL_NAME':
-                            AI_MODEL_NAME = setting['value']
+                        case 'AZURE_OPENAI_MODEL_NAME':
+                            AZURE_OPENAI_MODEL_NAME = setting['value']
 
         frontend_settings = { 
             "auth_enabled": AUTH_ENABLED, 
             "feedback_enabled": FEEDBACK_ENABLED,
             "header_title": HEADER_TITLE,
             "page_tab_title": PAGE_TAB_TITLE,
-            "ai_model_name": AI_MODEL_NAME
+            "azure_openai_models": AZURE_OPENAI_MODELS, ## available options for selection by user
+            "azure_openai_model": AZURE_OPENAI_MODEL
         }
 
         return jsonify(frontend_settings), 200
@@ -945,7 +947,7 @@ def write_frontend_settings():
         cosmos_usersettings_client.create_user_setting(user_id, "FEEDBACK_ENABLED", "True" if request.json["FEEDBACK_ENABLED"] else "False")
         cosmos_usersettings_client.create_user_setting(user_id, "HEADER_TITLE", request.json["HEADER_TITLE"])
         cosmos_usersettings_client.create_user_setting(user_id, "PAGE_TAB_TITLE", request.json["PAGE_TAB_TITLE"])
-        cosmos_usersettings_client.create_user_setting(user_id, "AI_MODEL_NAME", request.json["AI_MODEL_NAME"])
+        cosmos_usersettings_client.create_user_setting(user_id, "AZURE_OPENAI_MODEL", request.json["AZURE_OPENAI_MODEL"])
 
         logging.debug("Frontend settings have been saved.")
 
@@ -954,7 +956,7 @@ def write_frontend_settings():
         logging.exception("Exception in /frontend_settings_save")
         return jsonify({"error": str(e)}), 500  
     
-def generate_title(conversation_messages):
+def generate_title(conversation_messages, model):
     ## make sure the messages are sorted by _ts descending
     title_prompt = 'Summarize the conversation so far into a 4-word or less title. Do not use any quotation marks or punctuation. Respond with a json object in the format {{"title": string}}. Do not include any other commentary or description.'
 
@@ -969,7 +971,7 @@ def generate_title(conversation_messages):
         openai.api_version = "2023-03-15-preview"
         openai.api_key = AZURE_OPENAI_KEY
         completion = openai.ChatCompletion.create(    
-            engine=AZURE_OPENAI_MODEL,
+            engine=model, ## user selected in frontend settings
             messages=messages,
             temperature=1,
             max_tokens=64 

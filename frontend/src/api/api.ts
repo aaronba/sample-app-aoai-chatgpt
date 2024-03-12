@@ -1,14 +1,15 @@
 import { UserInfo, ConversationRequest, Conversation, ChatMessage, CosmosDBHealth, CosmosDBStatus, FrontendSettings } from "./models";
 import { chatHistorySampleData } from "../constants/chatHistory";
 
-export async function conversationApi(options: ConversationRequest, abortSignal: AbortSignal): Promise<Response> {
+export async function conversationApi(options: ConversationRequest, abortSignal: AbortSignal, model: string): Promise<Response> {
     const response = await fetch("/conversation", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            messages: options.messages
+            messages: options.messages,
+            model: model
         }),
         signal: abortSignal
     });
@@ -107,12 +108,13 @@ export const historyRead = async (convId: string): Promise<ChatMessage[]> => {
     return response
 }
 
-export const historyGenerate = async (options: ConversationRequest, abortSignal: AbortSignal, convId?: string): Promise<Response> => {
+export const historyGenerate = async (options: ConversationRequest, abortSignal: AbortSignal, convId?: string, model?: string): Promise<Response> => {
     let body;
     if(convId){
         body = JSON.stringify({
             conversation_id: convId,
-            messages: options.messages
+            messages: options.messages,
+            model: model
         })
     }else{
         body = JSON.stringify({
@@ -322,7 +324,8 @@ export const writeFrontendSettings = async (frontendSettings: FrontendSettings):
             FEEDBACK_ENABLED: frontendSettings.feedback_enabled,
             HEADER_TITLE: frontendSettings.header_title,
             PAGE_TAB_TITLE: frontendSettings.page_tab_title,
-            AI_MODEL_NAME: frontendSettings.ai_model_name
+            AZURE_OPENAI_MODELS: frontendSettings.azure_openai_models,
+            AZURE_OPENAI_MODEL: frontendSettings.azure_openai_model
         })
     })
     .then((res) => {
