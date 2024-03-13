@@ -36,7 +36,7 @@ export const fetchChatHistoryInit = (): Conversation[] | null => {
     return chatHistorySampleData;
 }
 
-export const historyList = async (offset=0): Promise<Conversation[] | null> => {
+export const historyList = async (offset=0, model: string): Promise<Conversation[] | null> => {
     const response = await fetch(`/history/list?offset=${offset}`, {
         method: "GET",
     }).then(async (res) => {
@@ -47,7 +47,7 @@ export const historyList = async (offset=0): Promise<Conversation[] | null> => {
         }
         const conversations: Conversation[] = await Promise.all(payload.map(async (conv: any) => {
             let convMessages: ChatMessage[] = [];
-            convMessages = await historyRead(conv.id)
+            convMessages = await historyRead(conv.id, model)
             .then((res) => {
                 return res
             })
@@ -72,11 +72,12 @@ export const historyList = async (offset=0): Promise<Conversation[] | null> => {
     return response
 }
 
-export const historyRead = async (convId: string): Promise<ChatMessage[]> => {
+export const historyRead = async (convId: string, model: string): Promise<ChatMessage[]> => {
     const response = await fetch("/history/read", {
         method: "POST",
         body: JSON.stringify({
-            conversation_id: convId
+            conversation_id: convId,
+            model: model
         }),
         headers: {
             "Content-Type": "application/json"
@@ -105,10 +106,11 @@ export const historyRead = async (convId: string): Promise<ChatMessage[]> => {
         console.error("There was an issue fetching your data.");
         return []
     })
+
     return response
 }
 
-export const historyGenerate = async (options: ConversationRequest, abortSignal: AbortSignal, convId?: string, model?: string): Promise<Response> => {
+export const historyGenerate = async (options: ConversationRequest, abortSignal: AbortSignal, model: string, convId?: string): Promise<Response> => {
     let body;
     if(convId){
         body = JSON.stringify({
@@ -118,7 +120,8 @@ export const historyGenerate = async (options: ConversationRequest, abortSignal:
         })
     }else{
         body = JSON.stringify({
-            messages: options.messages
+            messages: options.messages,
+            model: model
         })
     }
     const response = await fetch("/history/generate", {
@@ -138,12 +141,13 @@ export const historyGenerate = async (options: ConversationRequest, abortSignal:
     return response
 }
 
-export const historyUpdate = async (messages: ChatMessage[], convId: string): Promise<Response> => {
+export const historyUpdate = async (messages: ChatMessage[], convId: string, model: string): Promise<Response> => {
     const response = await fetch("/history/update", {
         method: "POST",
         body: JSON.stringify({
             conversation_id: convId,
-            messages: messages
+            messages: messages,
+            model: model
         }),
         headers: {
             "Content-Type": "application/json"
@@ -163,11 +167,12 @@ export const historyUpdate = async (messages: ChatMessage[], convId: string): Pr
     return response
 }
 
-export const historyDelete = async (convId: string) : Promise<Response> => {
+export const historyDelete = async (convId: string, model: string) : Promise<Response> => {
     const response = await fetch("/history/delete", {
         method: "DELETE",
         body: JSON.stringify({
             conversation_id: convId,
+            model: model
         }),
         headers: {
             "Content-Type": "application/json"
@@ -188,10 +193,12 @@ export const historyDelete = async (convId: string) : Promise<Response> => {
     return response;
 }
 
-export const historyDeleteAll = async () : Promise<Response> => {
+export const historyDeleteAll = async (model: string) : Promise<Response> => {
     const response = await fetch("/history/delete_all", {
         method: "DELETE",
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+            model: model
+        }),
         headers: {
             "Content-Type": "application/json"
         },
@@ -211,11 +218,12 @@ export const historyDeleteAll = async () : Promise<Response> => {
     return response;
 }
 
-export const historyClear = async (convId: string) : Promise<Response> => {
+export const historyClear = async (convId: string, model: string) : Promise<Response> => {
     const response = await fetch("/history/clear", {
         method: "POST",
         body: JSON.stringify({
             conversation_id: convId,
+            model: model
         }),
         headers: {
             "Content-Type": "application/json"
@@ -236,12 +244,13 @@ export const historyClear = async (convId: string) : Promise<Response> => {
     return response;
 }
 
-export const historyRename = async (convId: string, title: string) : Promise<Response> => {
+export const historyRename = async (convId: string, title: string, model: string) : Promise<Response> => {
     const response = await fetch("/history/rename", {
         method: "POST",
         body: JSON.stringify({
             conversation_id: convId,
-            title: title
+            title: title,
+            model: model
         }),
         headers: {
             "Content-Type": "application/json"
@@ -343,12 +352,13 @@ export const writeFrontendSettings = async (frontendSettings: FrontendSettings):
     return response;
 }
 
-export const historyMessageFeedback = async (messageId: string, feedback: string): Promise<Response> => {
+export const historyMessageFeedback = async (messageId: string, feedback: string, model: string): Promise<Response> => {
     const response = await fetch("/history/message_feedback", {
         method: "POST",
         body: JSON.stringify({
             message_id: messageId,
-            message_feedback: feedback
+            message_feedback: feedback,
+            model: model
         }),
         headers: {
             "Content-Type": "application/json"

@@ -28,7 +28,8 @@ const commandBarStyle: ICommandBarStyles = {
 const commandBarButtonStyle: Partial<IStackStyles> = { root: { height: '50px' } };
 
 export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
-    const appStateContext = useContext(AppStateContext)
+    const appStateContext = useContext(AppStateContext);
+    const AZURE_OPENAI_MODEL = appStateContext?.state.frontendSettings?.azure_openai_model!;
     const [showContextualMenu, setShowContextualMenu] = React.useState(false);
     const [hideClearAllDialog, { toggle: toggleClearAllDialog }] = useBoolean(true);
     const [clearing, setClearing] = React.useState(false)
@@ -64,21 +65,21 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
     const onHideContextualMenu = React.useCallback(() => setShowContextualMenu(false), []);
 
     const onClearAllChatHistory = async () => {
-        setClearing(true)
-        let response = await historyDeleteAll()
+        setClearing(true);
+        let response = await historyDeleteAll(AZURE_OPENAI_MODEL);
         if(!response.ok){
-            setClearingError(true)
+            setClearingError(true);
         }else{
-            appStateContext?.dispatch({ type: 'DELETE_CHAT_HISTORY' })
+            appStateContext?.dispatch({ type: 'DELETE_CHAT_HISTORY' });
             toggleClearAllDialog();
         }
         setClearing(false);
     }
 
     const onHideClearAllDialog = () => {
-        toggleClearAllDialog()
+        toggleClearAllDialog();
         setTimeout(() => {
-            setClearingError(false)
+            setClearingError(false);
         }, 2000);
     }
 

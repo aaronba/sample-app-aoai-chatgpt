@@ -2,7 +2,7 @@ import json
 import os
 import logging
 import requests
-import openai
+from openai import AzureOpenAI
 import copy
 import uuid
 from azure.identity import DefaultAzureCredential
@@ -398,21 +398,21 @@ def stream_with_data(body, headers, endpoint, history_metadata={}):
 
                     if 'error' in lineJson:
                         yield format_as_ndjson(lineJson)
-                    response["id"] = message_uuid
-                    response["model"] = lineJson["model"]
-                    response["created"] = lineJson["created"]
-                    response["object"] = lineJson["object"]
-                    response["apim-request-id"] = r.headers.get('apim-request-id')
+                    response.id = message_uuid
+                    response.model = lineJson["model"]
+                    response.created = lineJson["created"]
+                    response.object = lineJson["object"]
+                ## response.apim-request-id = r.headers.get('apim-request-id')
 
                     role = lineJson["choices"][0]["messages"][0]["delta"].get("role")
 
                     if role == "tool":
-                        response["choices"][0]["messages"].append(lineJson["choices"][0]["messages"][0]["delta"])
+                        response.choices[0].messages.append(lineJson["choices"][0]["messages"][0]["delta"])
                         yield format_as_ndjson(response)
                     elif role == "assistant": 
-                        if response['apim-request-id'] and DEBUG_LOGGING: 
-                            logging.debug(f"RESPONSE apim-request-id: {response['apim-request-id']}")
-                        response["choices"][0]["messages"].append({
+                        if response.apim-request-id and DEBUG_LOGGING: 
+                            logging.debug(f"RESPONSE apim-request-id: {response.apim-request-id}")
+                        response.choices[0].messages.append({
                             "role": "assistant",
                             "content": ""
                         })
@@ -420,7 +420,7 @@ def stream_with_data(body, headers, endpoint, history_metadata={}):
                     else:
                         deltaText = lineJson["choices"][0]["messages"][0]["delta"]["content"]
                         if deltaText != "[DONE]":
-                            response["choices"][0]["messages"].append({
+                            response.choices[0].messages.append({
                                 "role": "assistant",
                                 "content": deltaText
                             })
@@ -448,8 +448,8 @@ def formatApiResponseNoStreaming(rawResponse):
         "role": "assistant",
         "content": rawResponse["choices"][0]["message"]["content"]
     }
-    response["choices"][0]["messages"].append(toolMessage)
-    response["choices"][0]["messages"].append(assistantMessage)
+    response.choices[0].messages.append(toolMessage)
+    response.choices[0].messages.append(assistantMessage)
 
     return response
 
@@ -473,14 +473,14 @@ def formatApiResponseStreaming(rawResponse):
                 "content": rawResponse["choices"][0]["delta"]["context"]["messages"][0]["content"]
             }
         }
-        response["choices"][0]["messages"].append(messageObj)
+        response.choices[0].messages.append(messageObj)
     elif rawResponse["choices"][0]["delta"].get("role"):
         messageObj = {
             "delta": {
                 "role": "assistant",
             }
         }
-        response["choices"][0]["messages"].append(messageObj)
+        response.choices[0].messages.append(messageObj)
     else:
         if rawResponse["choices"][0]["end_turn"]:
             messageObj = {
@@ -488,21 +488,21 @@ def formatApiResponseStreaming(rawResponse):
                     "content": "[DONE]",
                 }
             }
-            response["choices"][0]["messages"].append(messageObj)
+            response.choices[0].messages.append(messageObj)
         else:
             messageObj = {
                 "delta": {
                     "content": rawResponse["choices"][0]["delta"]["content"],
                 }
             }
-            response["choices"][0]["messages"].append(messageObj)
+            response.choices[0].messages.append(messageObj)
 
     return response
 
-def conversation_with_data(request_body):
+def conversation_with_data(request_body, model):
     body, headers = prepare_body_headers_with_data(request)
     base_url = AZURE_OPENAI_ENDPOINT if AZURE_OPENAI_ENDPOINT else f"https://{AZURE_OPENAI_RESOURCE}.openai.azure.com/"
-    endpoint = f"{base_url}openai/deployments/{AZURE_OPENAI_MODEL}/extensions/chat/completions?api-version={AZURE_OPENAI_PREVIEW_API_VERSION}"
+    endpoint = f"{base_url}openai/deployments/{model}/extensions/chat/completions?api-version={AZURE_OPENAI_PREVIEW_API_VERSION}"
     history_metadata = request_body.get("history_metadata", {})
 
     if not SHOULD_STREAM:
@@ -523,8 +523,8 @@ def conversation_with_data(request_body):
 def stream_without_data(response, history_metadata={}):
     responseText = ""
     for line in response:
-        if line["choices"]:
-            deltaText = line["choices"][0]["delta"].get('content')
+        if line.choices:
+            deltaText = line.choices[0].delta.content
         else:
             deltaText = ""
         if deltaText and deltaText != "[DONE]":
@@ -532,9 +532,9 @@ def stream_without_data(response, history_metadata={}):
 
         response_obj = {
             "id": message_uuid,
-            "model": line["model"],
-            "created": line["created"],
-            "object": line["object"],
+            "model": line.model,
+            "created": line.created,
+            "object": line.object,
             "choices": [{
                 "messages": [{
                     "role": "assistant",
@@ -545,12 +545,11 @@ def stream_without_data(response, history_metadata={}):
         }
         yield format_as_ndjson(response_obj)
 
-
 def conversation_without_data(request_body, model):
-    openai.api_type = "azure"
-    openai.api_base = AZURE_OPENAI_ENDPOINT if AZURE_OPENAI_ENDPOINT else f"https://{AZURE_OPENAI_RESOURCE}.openai.azure.com/"
-    openai.api_version = "2023-08-01-preview"
-    openai.api_key = AZURE_OPENAI_KEY
+    client = AzureOpenAI(azure_endpoint=AZURE_OPENAI_ENDPOINT if AZURE_OPENAI_ENDPOINT else f"https://{AZURE_OPENAI_RESOURCE}.openai.azure.com/",
+                         azure_deployment=model,
+                         api_version=AZURE_OPENAI_PREVIEW_API_VERSION,
+                         api_key=AZURE_OPENAI_KEY)
 
     request_messages = request_body["messages"]
     messages = [
@@ -567,15 +566,13 @@ def conversation_without_data(request_body, model):
                 "content": message["content"]
             })
 
-    response = openai.ChatCompletion.create(
-        engine=model, ## user selected in frontend settings
-        messages = messages,
-        temperature=float(AZURE_OPENAI_TEMPERATURE),
-        max_tokens=int(AZURE_OPENAI_MAX_TOKENS),
-        top_p=float(AZURE_OPENAI_TOP_P),
-        stop=AZURE_OPENAI_STOP_SEQUENCE.split("|") if AZURE_OPENAI_STOP_SEQUENCE else None,
-        stream=SHOULD_STREAM
-    )
+    response = client.chat.completions.create(model=model, ## user selected in frontend settings
+    messages = messages,
+    temperature=float(AZURE_OPENAI_TEMPERATURE),
+    max_tokens=int(AZURE_OPENAI_MAX_TOKENS),
+    top_p=float(AZURE_OPENAI_TOP_P),
+    stop=AZURE_OPENAI_STOP_SEQUENCE.split("|") if AZURE_OPENAI_STOP_SEQUENCE else None,
+    stream=SHOULD_STREAM)
 
     history_metadata = request_body.get("history_metadata", {})
 
@@ -598,7 +595,6 @@ def conversation_without_data(request_body, model):
     else:
         return Response(stream_without_data(response, history_metadata), mimetype='text/event-stream')
 
-
 @app.route("/conversation", methods=["GET", "POST"])
 def conversation():
     request_body = request.json
@@ -609,7 +605,7 @@ def conversation_internal(request_body, model):
     try:
         use_data = should_use_data()
         if use_data:
-            return conversation_with_data(request_body)
+            return conversation_with_data(request_body, model)
         else:
             return conversation_without_data(request_body, model)
     except Exception as e:
@@ -917,8 +913,8 @@ def read_frontend_settings():
                             HEADER_TITLE = setting['value']
                         case 'PAGE_TAB_TITLE':
                             PAGE_TAB_TITLE = setting['value']
-                        case 'AZURE_OPENAI_MODEL_NAME':
-                            AZURE_OPENAI_MODEL_NAME = setting['value']
+                        case 'AZURE_OPENAI_MODEL':
+                            AZURE_OPENAI_MODEL = setting['value']
 
         frontend_settings = { 
             "auth_enabled": AUTH_ENABLED, 
@@ -957,6 +953,11 @@ def write_frontend_settings():
         return jsonify({"error": str(e)}), 500  
     
 def generate_title(conversation_messages, model):
+    client = AzureOpenAI(azure_endpoint=AZURE_OPENAI_ENDPOINT if AZURE_OPENAI_ENDPOINT else f"https://{AZURE_OPENAI_RESOURCE}.openai.azure.com/",
+                        azure_deployment=model,
+                        api_version=AZURE_OPENAI_PREVIEW_API_VERSION,
+                        api_key=AZURE_OPENAI_KEY)
+        
     ## make sure the messages are sorted by _ts descending
     title_prompt = 'Summarize the conversation so far into a 4-word or less title. Do not use any quotation marks or punctuation. Respond with a json object in the format {{"title": string}}. Do not include any other commentary or description.'
 
@@ -966,17 +967,11 @@ def generate_title(conversation_messages, model):
     try:
         ## Submit prompt to Chat Completions for response
         base_url = AZURE_OPENAI_ENDPOINT if AZURE_OPENAI_ENDPOINT else f"https://{AZURE_OPENAI_RESOURCE}.openai.azure.com/"
-        openai.api_type = "azure"
-        openai.api_base = base_url
-        openai.api_version = "2023-03-15-preview"
-        openai.api_key = AZURE_OPENAI_KEY
-        completion = openai.ChatCompletion.create(    
-            engine=model, ## user selected in frontend settings
-            messages=messages,
-            temperature=1,
-            max_tokens=64 
-        )
-        title = json.loads(completion['choices'][0]['message']['content'])['title']
+        completion = client.chat.completions.create(model=model, ## user selected in frontend settings
+        messages=messages,
+        temperature=1,
+        max_tokens=64)
+        title = json.loads(completion.choices[0].message.content).title
         return title
     except Exception as e:
         return messages[-2]['content']

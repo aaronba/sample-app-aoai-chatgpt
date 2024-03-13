@@ -41,7 +41,7 @@ const enum messageStatus {
 }
 
 const Chat = () => {
-    const appStateContext = useContext(AppStateContext)
+    const appStateContext = useContext(AppStateContext);
     const AUTH_ENABLED = appStateContext?.state.frontendSettings?.auth_enabled;
     const AZURE_OPENAI_MODEL = appStateContext?.state.frontendSettings?.azure_openai_model!;
     const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
@@ -279,7 +279,8 @@ const Chat = () => {
         }
         let result = {} as ChatResponse;
         try {
-            const response = conversationId ? await historyGenerate(request, abortController.signal, conversationId, AZURE_OPENAI_MODEL) : await historyGenerate(request, abortController.signal);
+            console.debug("Sending question to Azure OpenAI [" + AZURE_OPENAI_MODEL + "]...");
+            const response = conversationId ? await historyGenerate(request, abortController.signal, AZURE_OPENAI_MODEL, conversationId) : await historyGenerate(request, abortController.signal, AZURE_OPENAI_MODEL);
             if (!response?.ok) {
                 let errorChatMsg: ChatMessage = {
                     id: uuid(),
@@ -440,7 +441,7 @@ const Chat = () => {
     const clearChat = async () => {
         setClearingChat(true)
         if (appStateContext?.state.currentChat?.id && appStateContext?.state.isCosmosDBAvailable.cosmosDB) {
-            let response = await historyClear(appStateContext?.state.currentChat.id)
+            let response = await historyClear(appStateContext?.state.currentChat.id, AZURE_OPENAI_MODEL)
             if (!response.ok) {
                 setErrorMsg({
                     title: "Error clearing current chat",
@@ -483,7 +484,7 @@ const Chat = () => {
 
     useLayoutEffect(() => {
         const saveToDB = async (messages: ChatMessage[], id: string) => {
-            const response = await historyUpdate(messages, id)
+            const response = await historyUpdate(messages, id, AZURE_OPENAI_MODEL)
             return response
         }
 

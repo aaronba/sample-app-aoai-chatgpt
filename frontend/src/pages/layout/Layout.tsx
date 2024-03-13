@@ -21,6 +21,7 @@ const Layout = () => {
     const [pageTabTitle, setPageTabTitle] = useState<string>("");
     const [aiModels, setAIModels] = useState<string>("");
     const [aiModel, setAIModel] = useState<string>("");
+    const [deploymentLabel, setDeploymentLabel] = useState<string>("No Deployment Model defined yet.");
     const [aiModelChoices, setAIModelChoices] = useState<IChoiceGroupOption[]>([]);
     const appStateContext = useContext(AppStateContext);
 
@@ -81,9 +82,12 @@ const Layout = () => {
             azure_openai_model: aiModel
         }
 
+        console.log("Frontend Settings being saved... " + JSON.stringify(settings));
+
         // Save the updated settings to appsettings.json file
         writeFrontendSettings(settings).then((response) => {
             appStateContext?.dispatch({ type: 'SET_FRONTEND_SETTINGS', payload: settings });
+            console.log("Saved Frontend Settings successfully.");
         })
         .catch((err) => {
             console.error("There was an issue saving the updated frontend settings.  " + err);
@@ -141,9 +145,15 @@ const Layout = () => {
         setAIModelChoices(splitChoices(choices));
     }, [appStateContext?.state.frontendSettings?.azure_openai_models]);
 
+    useEffect(() => {
+        let deployment = appStateContext?.state.frontendSettings?.azure_openai_model ?? "Not defined";
+        setDeploymentLabel("Azure OpenAI Deployment Model in use: [" + deployment + "]");
+        console.log(deploymentLabel);
+    }, [appStateContext?.state.frontendSettings?.azure_openai_model]);
+
     return (
         <div className={styles.layout}>
-            <header className={styles.header} role={"banner"}>
+            <header className={styles.header} role={"banner"} title={deploymentLabel}>
                 <Stack horizontal verticalAlign="center" horizontalAlign="space-between">
                     <Stack horizontal verticalAlign="center">
                         <img
@@ -212,12 +222,12 @@ const Layout = () => {
                                 background: "#FFFFFF",
                                 boxShadow: "0px 14px 28.8px rgba(0, 0, 0, 0.24), 0px 0px 8px rgba(0, 0, 0, 0.2)",
                                 borderRadius: "8px",
-                                maxHeight: '650px',
-                                minHeight: '450px',
+                                maxHeight: '550px',
+                                minHeight: '200px',
                                 maxWidth: '500px',
                                 minWidth: '300px',
                                 width: '400px',
-                                height: '550px',
+                                height: '275px',
                             }
                         }
                     }]
@@ -228,7 +238,7 @@ const Layout = () => {
                 }}
             >
                 <Stack verticalAlign="center" style={{ gap: "6px" }}>
-                    <Toggle 
+            {/*   <Toggle 
                         id="AuthEnabledToggle"
                         label={"Auth Enabled?"} 
                         onChange={handleAuthEnabledChange}
@@ -244,9 +254,10 @@ const Layout = () => {
                     </Toggle>
                     <TextField id="HeaderTitleTextField" label="Header Title" value={headerTitle} onChange={handleHeaderTitleChange} />
                     <TextField id="PageTabTitleTextField" label="Page Tab Title" value={pageTabTitle} onChange={handlePageTabTitleChange} />
+            */}
                     <ChoiceGroup 
                         id="AIModelChoiceGroup"
-                        label="AI Model"
+                        label="Azure OpenAI Deployment Name"
                         styles={{flexContainer: [{flexDirection: "row"}]}}
                         selectedKey={aiModel}
                         onChange={handleAIModelChange}
@@ -265,7 +276,7 @@ const Layout = () => {
                     </PrimaryButton>
                 </Stack>
                 <br></br>
-                <Stack horizontal verticalAlign="center" horizontalAlign="center" style={{ gap: "8px", color: "red", fontStyle: "italic" }}>
+                <Stack horizontal verticalAlign="center" horizontalAlign="center" style={{ gap: "8px", color: "green", fontStyle: "italic", fontWeight: "bold" }}>
                     <span>{saveSettingsText}</span>
                 </Stack>
             </Dialog>            

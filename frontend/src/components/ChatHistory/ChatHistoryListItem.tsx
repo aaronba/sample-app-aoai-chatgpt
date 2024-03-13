@@ -3,8 +3,7 @@ import { DefaultButton, Dialog, DialogFooter, DialogType, Text, IconButton, List
 
 import { AppStateContext } from '../../state/AppProvider';
 import { GroupedChatHistory } from './ChatHistoryList';
-
-import styles from "./ChatHistoryPanel.module.css"
+import styles from "./ChatHistoryPanel.module.css";
 import { useBoolean } from '@fluentui/react-hooks';
 import { Conversation } from '../../api/models';
 import { historyDelete, historyRename, historyList } from '../../api';
@@ -47,7 +46,7 @@ export const ChatHistoryListItemCell: React.FC<ChatHistoryListItemCellProps> = (
     const [textFieldFocused, setTextFieldFocused] = useState(false);
     const textFieldRef = useRef<ITextField | null>(null);
     
-    const appStateContext = React.useContext(AppStateContext)
+    const appStateContext = React.useContext(AppStateContext);
     const isSelected = item?.id === appStateContext?.state.currentChat?.id;
     const dialogContentProps = {
         type: DialogType.close,
@@ -82,7 +81,7 @@ export const ChatHistoryListItemCell: React.FC<ChatHistoryListItemCellProps> = (
     }, [appStateContext?.state.currentChat?.id, item?.id]);
 
     const onDelete = async () => {
-        let response = await historyDelete(item.id)
+        let response = await historyDelete(item.id, appStateContext?.state.frontendSettings?.azure_openai_model!)
         if(!response.ok){
             setErrorDelete(true)
             setTimeout(() => {
@@ -124,7 +123,7 @@ export const ChatHistoryListItemCell: React.FC<ChatHistoryListItemCellProps> = (
             return
         }
         setRenameLoading(true)
-        let response = await historyRename(item.id, editTitle);
+        let response = await historyRename(item.id, editTitle, appStateContext?.state.frontendSettings?.azure_openai_model!);
         if(!response.ok){
             setErrorRename("Error: could not rename item")
             setTimeout(() => {
@@ -277,7 +276,7 @@ export const ChatHistoryListItemGroups: React.FC<ChatHistoryListItemGroupsProps>
         const currentChatHistory = appStateContext?.state.chatHistory;
         setShowSpinner(true);
 
-        await historyList(offset).then((response) => {
+        await historyList(offset, appStateContext?.state.frontendSettings?.azure_openai_model!).then((response) => {
             const concatenatedChatHistory = currentChatHistory && response && currentChatHistory.concat(...response)
             if (response) {
                 appStateContext?.dispatch({ type: 'FETCH_CHAT_HISTORY', payload: concatenatedChatHistory || response });
