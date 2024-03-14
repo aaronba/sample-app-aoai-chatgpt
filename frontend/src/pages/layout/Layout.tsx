@@ -19,7 +19,7 @@ const Layout = () => {
     const [feedbackEnabled, setFeedbackEnabled] = useState<boolean>(false);
     const [headerTitle, setHeaderTitle] = useState<string>("");
     const [pageTabTitle, setPageTabTitle] = useState<string>("");
-    const [aiModels, setAIModels] = useState<string>("");
+    const [aiDeployments, setAIDeployments] = useState<string>("");
     const [aiModel, setAIModel] = useState<string>("");
     const [deploymentLabel, setDeploymentLabel] = useState<string>("No Deployment Model defined yet.");
     const [aiModelChoices, setAIModelChoices] = useState<IChoiceGroupOption[]>([]);
@@ -43,7 +43,7 @@ const Layout = () => {
         setFeedbackEnabled(appStateContext?.state.frontendSettings?.feedback_enabled == true ? true : false);
         setHeaderTitle(appStateContext?.state.frontendSettings?.header_title!);
         setPageTabTitle(appStateContext?.state.frontendSettings?.page_tab_title!);
-        setAIModels(appStateContext?.state.frontendSettings?.azure_openai_models!);
+        setAIDeployments(appStateContext?.state.frontendSettings?.azure_openai_deployments!);
         setAIModel(appStateContext?.state.frontendSettings?.azure_openai_model!);
     };
 
@@ -78,7 +78,7 @@ const Layout = () => {
             feedback_enabled: feedbackEnabled,
             header_title: headerTitle,
             page_tab_title: pageTabTitle,
-            azure_openai_models: aiModels,
+            azure_openai_deployments: aiDeployments,
             azure_openai_model: aiModel
         }
 
@@ -141,9 +141,9 @@ const Layout = () => {
     }, [appStateContext?.state.frontendSettings?.page_tab_title]);
 
     useEffect(() => {
-        let choices = appStateContext?.state.frontendSettings?.azure_openai_models ?? "";
+        let choices = appStateContext?.state.frontendSettings?.azure_openai_deployments ?? "";
         setAIModelChoices(splitChoices(choices));
-    }, [appStateContext?.state.frontendSettings?.azure_openai_models]);
+    }, [appStateContext?.state.frontendSettings?.azure_openai_deployments]);
 
     useEffect(() => {
         let deployment = appStateContext?.state.frontendSettings?.azure_openai_model ?? "Not defined";

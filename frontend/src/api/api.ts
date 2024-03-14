@@ -333,7 +333,7 @@ export const writeFrontendSettings = async (frontendSettings: FrontendSettings):
             FEEDBACK_ENABLED: frontendSettings.feedback_enabled,
             HEADER_TITLE: frontendSettings.header_title,
             PAGE_TAB_TITLE: frontendSettings.page_tab_title,
-            AZURE_OPENAI_MODELS: frontendSettings.azure_openai_models,
+            AZURE_OPENAI_DEPLOYMENTS: frontendSettings.azure_openai_deployments,
             AZURE_OPENAI_MODEL: frontendSettings.azure_openai_model
         })
     })

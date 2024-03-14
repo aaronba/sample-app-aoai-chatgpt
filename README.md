@@ -228,7 +228,13 @@ Note: settings starting with `AZURE_SEARCH` are only needed when using Azure Ope
 |AZURE_OPENAI_PREVIEW_API_VERSION|2023-06-01-preview|API version when using Azure OpenAI on your data|
 |AZURE_OPENAI_STREAM|True|Whether or not to use streaming for the response|
 |AZURE_OPENAI_EMBEDDING_NAME||The name of your embedding model deployment if using vector search.
-
+|AZURE_COSMOSDB_ENABLE_FEEDBACK||True or False, whether or not you want to allow users to provide feedback via thumbs up/down on AI responses
+|AUTH_ENABLED||True or False, whether or not user authentication is enabled
+|HEADER_TITLE||This string value will display in the Header of the page in the upper-left hand corner
+|PAGE_TAB_TITLE||This string value will display on the browser Tab 
+|AZURE_OPENAI_DEPLOYMENTS||These comma-delimited values will display as a switch control on the Frontend Settings dialog.  The selected deployment will determine which Azure OpenAI Deployment will be used when calling AI services.  NOTE: This is not the Model Name, but the Deployment Name.
+|DEBUG||True or False, whether or not to put the application in debugging mode for troubleshooting purposes
+|AZURE_APP_INSIGHTS_CONNECTION_STRING||This is the connection string containing the instrumentation key/endpoint/etc. for a particular Azure Application Insights instance
 
 ## Contributing
 

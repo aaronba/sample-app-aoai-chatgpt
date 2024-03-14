@@ -911,7 +911,7 @@ def read_frontend_settings():
         FEEDBACK_ENABLED = AZURE_COSMOSDB_ENABLE_FEEDBACK and AZURE_COSMOSDB_DATABASE not in [None, ""]
         HEADER_TITLE = os.environ.get("HEADER_TITLE", "VA Office of the CTO")
         PAGE_TAB_TITLE = os.environ.get("PAGE_TAB_TITLE", "VA Chat Room")
-        AZURE_OPENAI_MODELS = os.environ.get("AZURE_OPENAI_MODELS", "gpt-35-turbo,gpt-4")
+        AZURE_OPENAI_DEPLOYMENTS = os.environ.get("AZURE_OPENAI_DEPLOYMENTS", "gpt-35-turbo,gpt-4") ## These are available Deployments, not Models in Azure
         AZURE_OPENAI_MODEL = os.environ.get("AZURE_OPENAI_MODEL", "gpt-35-turbo")
 
         if AUTH_ENABLED:
@@ -930,7 +930,7 @@ def read_frontend_settings():
                         case 'AUTH_ENABLED':
                             AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "True") == "True" ## User cannot override
                         case 'FEEDBACK_ENABLED':
-                            FEEDBACK_ENABLED = setting['value']
+                            FEEDBACK_ENABLED = AZURE_COSMOSDB_ENABLE_FEEDBACK and AZURE_COSMOSDB_DATABASE not in [None, ""] ## User cannot override
                         case 'HEADER_TITLE':
                             HEADER_TITLE = setting['value']
                         case 'PAGE_TAB_TITLE':
@@ -945,7 +945,7 @@ def read_frontend_settings():
             "feedback_enabled": FEEDBACK_ENABLED,
             "header_title": HEADER_TITLE,
             "page_tab_title": PAGE_TAB_TITLE,
-            "azure_openai_models": AZURE_OPENAI_MODELS, ## available options for selection by user
+            "azure_openai_deployments": AZURE_OPENAI_DEPLOYMENTS, ## available options for selection by user
             "azure_openai_model": AZURE_OPENAI_MODEL
         }
 
