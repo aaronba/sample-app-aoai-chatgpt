@@ -9,6 +9,7 @@ from azure.identity import DefaultAzureCredential
 from base64 import b64encode
 from flask import Flask, Response, request, jsonify, send_from_directory
 from dotenv import load_dotenv
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 from backend.auth.auth_utils import get_authenticated_user_details
 from backend.history.cosmosdbservice import CosmosConversationClient
@@ -36,6 +37,21 @@ DEBUG = os.environ.get("DEBUG", "false")
 DEBUG_LOGGING = DEBUG.lower() == "true"
 if DEBUG_LOGGING:
     logging.basicConfig(level=logging.DEBUG)
+
+# Set up Azure App Insights logger
+try:
+    app_insights_conn_str = os.environ.get("AZURE_APP_INSIGHTS_CONNECTION_STRING", "")
+    logger = logging.getLogger(__name__)
+    handler = AzureLogHandler(connection_string=app_insights_conn_str)
+    logger.addHandler(handler)
+    if DEBUG_LOGGING:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+    logger.info("Loaded Azure App Insights")
+except Exception as e:
+    raise Exception(f"Exception initializing Azure App Insights logger: {e}")
+
 
 # On Your Data Settings
 DATASOURCE_TYPE = os.environ.get("DATASOURCE_TYPE", "AzureCognitiveSearch")
@@ -126,6 +142,7 @@ cosmos_usersettings_client = None
 if AZURE_COSMOSDB_DATABASE and AZURE_COSMOSDB_ACCOUNT and AZURE_COSMOSDB_CONVERSATIONS_CONTAINER and AZURE_COSMOSDB_USERSETTINGS_CONTAINER:
     try :
         cosmos_endpoint = f'https://{AZURE_COSMOSDB_ACCOUNT}.documents.azure{AZURE_COSMOSDB_SUFFIX}:443/'
+        logger.debug(f"CosmosDB endpoint: {cosmos_endpoint}")
 
         if not AZURE_COSMOSDB_ACCOUNT_KEY:
             credential = DefaultAzureCredential()
@@ -147,7 +164,7 @@ if AZURE_COSMOSDB_DATABASE and AZURE_COSMOSDB_ACCOUNT and AZURE_COSMOSDB_CONVERS
             container_name=AZURE_COSMOSDB_USERSETTINGS_CONTAINER
         )
     except Exception as e:
-        logging.exception("Exception in CosmosDB initialization", e)
+        logger.exception("Exception in CosmosDB initialization", e)
         cosmos_conversation_client = None
         cosmos_usersettings_client = None
 
@@ -159,16 +176,15 @@ def is_chat_model():
 def should_use_data():
     if AZURE_SEARCH_SERVICE and AZURE_SEARCH_INDEX and AZURE_SEARCH_KEY:
         if DEBUG_LOGGING:
-            logging.debug("Using Azure Cognitive Search")
+            logger.debug("Using Azure Cognitive Search")
         return True
     
     if AZURE_COSMOSDB_MONGO_VCORE_DATABASE and AZURE_COSMOSDB_MONGO_VCORE_CONTAINER and AZURE_COSMOSDB_MONGO_VCORE_INDEX and AZURE_COSMOSDB_MONGO_VCORE_CONNECTION_STRING:
         if DEBUG_LOGGING:
-            logging.debug("Using Azure CosmosDB Mongo vcore")
+            logger.debug("Using Azure CosmosDB Mongo vcore")
         return True
     
     return False
-
 
 def format_as_ndjson(obj: dict) -> str:
     return json.dumps(obj, ensure_ascii=False) + "\n"
@@ -193,7 +209,7 @@ def fetchUserGroups(userToken, nextLink=None):
         r = requests.get(endpoint, headers=headers)
         if r.status_code != 200:
             if DEBUG_LOGGING:
-                logging.error(f"Error fetching user groups: {r.status_code} {r.text}")
+                logger.error(f"Error fetching user groups: {r.status_code} {r.text}")
             return []
         
         r = r.json()
@@ -203,7 +219,7 @@ def fetchUserGroups(userToken, nextLink=None):
         
         return r['value']
     except Exception as e:
-        logging.error(f"Exception in fetchUserGroups: {e}")
+        logger.error(f"Exception in fetchUserGroups: {e}")
         return []
 
 
@@ -213,7 +229,7 @@ def generateFilterString(userToken):
 
     # Construct filter string
     if not userGroups:
-        logging.debug("No user groups found")
+        logger.debug("No user groups found")
 
     group_ids = ", ".join([obj['id'] for obj in userGroups])
     return f"{AZURE_SEARCH_PERMITTED_GROUPS_COLUMN}/any(g:search.in(g, '{group_ids}'))"
@@ -247,11 +263,11 @@ def prepare_body_headers_with_data(request):
         if AZURE_SEARCH_PERMITTED_GROUPS_COLUMN:
             userToken = request.headers.get('X-MS-TOKEN-AAD-ACCESS-TOKEN', "")
             if DEBUG_LOGGING:
-                logging.debug(f"USER TOKEN is {'present' if userToken else 'not present'}")
+                logger.debug(f"USER TOKEN is {'present' if userToken else 'not present'}")
 
             filter = generateFilterString(userToken)
             if DEBUG_LOGGING:
-                logging.debug(f"FILTER: {filter}")
+                logger.debug(f"FILTER: {filter}")
 
         body["dataSources"].append(
             {
@@ -359,7 +375,7 @@ def prepare_body_headers_with_data(request):
         if body_clean["dataSources"][0]["parameters"].get("embeddingKey"):
             body_clean["dataSources"][0]["parameters"]["embeddingKey"] = "*****"
             
-        logging.debug(f"REQUEST BODY: {json.dumps(body_clean, indent=4)}")
+        logger.debug(f"REQUEST BODY: {json.dumps(body_clean, indent=4)}")
 
     headers = {
         'Content-Type': 'application/json',
@@ -411,7 +427,7 @@ def stream_with_data(body, headers, endpoint, history_metadata={}):
                         yield format_as_ndjson(response)
                     elif role == "assistant": 
                         if response.apim-request-id and DEBUG_LOGGING: 
-                            logging.debug(f"RESPONSE apim-request-id: {response.apim-request-id}")
+                            logger.debug(f"RESPONSE apim-request-id: {response.apim-request-id}")
                         response.choices[0].messages.append({
                             "role": "assistant",
                             "content": ""
@@ -609,7 +625,7 @@ def conversation_internal(request_body, model):
         else:
             return conversation_without_data(request_body, model)
     except Exception as e:
-        logging.exception("Exception in /conversation")
+        logger.exception("Exception in /conversation")
         return jsonify({"error": str(e)}), 500
 
 ## Conversation History API ## 
@@ -658,7 +674,7 @@ def add_conversation():
         return conversation_internal(request_body, model)
        
     except Exception as e:
-        logging.exception("Exception in /history/generate")
+        logger.exception("Exception in /history/generate")
         return jsonify({"error": str(e)}), 500
 
 
@@ -706,7 +722,7 @@ def update_conversation():
         return jsonify(response), 200
        
     except Exception as e:
-        logging.exception("Exception in /history/update")
+        logger.exception("Exception in /history/update")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/history/message_feedback", methods=["POST"])
@@ -732,7 +748,7 @@ def update_message():
             return jsonify({"error": f"Unable to update message {message_id}. It either does not exist or the user does not have access to it."}), 404
         
     except Exception as e:
-        logging.exception("Exception in /history/message_feedback")
+        logger.exception("Exception in /history/message_feedback")
         return jsonify({"error": str(e)}), 500
 
 
@@ -744,6 +760,7 @@ def delete_conversation():
     
     ## check request for conversation_id
     conversation_id = request.json.get("conversation_id", None)
+    logger.debug(f"{authenticated_user['user_name']} is deleting conversation {conversation_id}")
     try: 
         if not conversation_id:
             return jsonify({"error": "conversation_id is required"}), 400
@@ -756,7 +773,7 @@ def delete_conversation():
 
         return jsonify({"message": "Successfully deleted conversation and messages", "conversation_id": conversation_id}), 200
     except Exception as e:
-        logging.exception("Exception in /history/delete")
+        logger.exception("Exception in /history/delete")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/history/list", methods=["GET"])
@@ -767,6 +784,7 @@ def list_conversations():
 
     ## get the conversations from cosmos
     conversations = cosmos_conversation_client.get_conversations(user_id, offset=offset, limit=25)
+    logger.debug(f"{authenticated_user['user_name']} is listing conversations {conversations}")
     if not isinstance(conversations, list):
         return jsonify({"error": f"No conversations for {user_id} were found"}), 404
 
@@ -787,6 +805,7 @@ def get_conversation():
 
     ## get the conversation object and the related messages from cosmos
     conversation = cosmos_conversation_client.get_conversation(user_id, conversation_id)
+    logger.debug(f"{authenticated_user['user_name']} is getting conversation {conversation}")
     ## return the conversation id and the messages in the bot frontend format
     if not conversation:
         return jsonify({"error": f"Conversation {conversation_id} was not found. It either does not exist or the logged in user does not have access to it."}), 404
@@ -812,6 +831,7 @@ def rename_conversation():
     
     ## get the conversation from cosmos
     conversation = cosmos_conversation_client.get_conversation(user_id, conversation_id)
+    logger.debug(f"{authenticated_user['user_name']} is renaming conversation {conversation}")
     if not conversation:
         return jsonify({"error": f"Conversation {conversation_id} was not found. It either does not exist or the logged in user does not have access to it."}), 404
 
@@ -833,6 +853,7 @@ def delete_all_conversations():
     # get conversations for user
     try:
         conversations = cosmos_conversation_client.get_conversations(user_id, offset=0, limit=None)
+        logger.debug(f"{authenticated_user['user_name']} is deleting all conversations {conversations}")
         if not conversations:
             return jsonify({"error": f"No conversations for {user_id} were found"}), 404
         
@@ -847,7 +868,7 @@ def delete_all_conversations():
         return jsonify({"message": f"Successfully deleted conversation and messages for user {user_id}"}), 200
     
     except Exception as e:
-        logging.exception("Exception in /history/delete_all")
+        logger.exception("Exception in /history/delete_all")
         return jsonify({"error": str(e)}), 500
     
 
@@ -863,12 +884,13 @@ def clear_messages():
         if not conversation_id:
             return jsonify({"error": "conversation_id is required"}), 400
         
+        logger.debug(f"{authenticated_user['user_name']} is deleting conversation {conversation_id}")
         ## delete the conversation messages from cosmos
         deleted_messages = cosmos_conversation_client.delete_messages(conversation_id, user_id)
 
         return jsonify({"message": "Successfully deleted messages in conversation", "conversation_id": conversation_id}), 200
     except Exception as e:
-        logging.exception("Exception in /history/clear_messages")
+        logger.exception("Exception in /history/clear_messages")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/history/ensure", methods=["GET"])
@@ -896,7 +918,7 @@ def read_frontend_settings():
             ## Check if there are any user specific values
             authenticated_user = get_authenticated_user_details(request_headers=request.headers)
             user_id = authenticated_user['user_principal_id']
-            logging.debug(f"Retrieving any user settings for {user_id}")
+            logger.debug(f"Retrieving any user settings for {authenticated_user['user_name']}")
 
             # Retrieve any user settings for this user from cosmos
             user_settings = cosmos_usersettings_client.get_user_settings(user_id)
@@ -915,6 +937,8 @@ def read_frontend_settings():
                             PAGE_TAB_TITLE = setting['value']
                         case 'AZURE_OPENAI_MODEL':
                             AZURE_OPENAI_MODEL = setting['value']
+        else:
+            logger.debug("NOTE!! Authentication is disabled so the user accessing chat is unknown.")
 
         frontend_settings = { 
             "auth_enabled": AUTH_ENABLED, 
@@ -927,13 +951,13 @@ def read_frontend_settings():
 
         return jsonify(frontend_settings), 200
     except Exception as e:
-        logging.exception("Exception in /frontend_settings")
+        logger.exception("Exception in /frontend_settings")
         return jsonify({"error": str(e)}), 500  
 
 @app.route("/frontend_settings/write", methods=["POST"]) 
 def write_frontend_settings():
     try:
-        logging.debug("Handling request to save frontend settings...")
+        logger.debug("Handling request to save frontend settings...")
 
         authenticated_user = get_authenticated_user_details(request_headers=request.headers)
         user_id = authenticated_user['user_principal_id']
@@ -945,11 +969,11 @@ def write_frontend_settings():
         cosmos_usersettings_client.create_user_setting(user_id, "PAGE_TAB_TITLE", request.json["PAGE_TAB_TITLE"])
         cosmos_usersettings_client.create_user_setting(user_id, "AZURE_OPENAI_MODEL", request.json["AZURE_OPENAI_MODEL"])
 
-        logging.debug("Frontend settings have been saved.")
+        logger.debug(f"Frontend settings have been saved by {authenticated_user['user_name']}")
 
         return jsonify(request.json), 200
     except Exception as e:
-        logging.exception("Exception in /frontend_settings_save")
+        logger.exception("Exception in /frontend_settings_save")
         return jsonify({"error": str(e)}), 500  
     
 def generate_title(conversation_messages, model):
