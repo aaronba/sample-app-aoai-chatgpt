@@ -932,9 +932,9 @@ def read_frontend_settings():
                         case 'FEEDBACK_ENABLED':
                             FEEDBACK_ENABLED = AZURE_COSMOSDB_ENABLE_FEEDBACK and AZURE_COSMOSDB_DATABASE not in [None, ""] ## User cannot override
                         case 'HEADER_TITLE':
-                            HEADER_TITLE = setting['value']
+                            HEADER_TITLE = os.environ.get("HEADER_TITLE", "VA Office of the CTO") ## User cannot override
                         case 'PAGE_TAB_TITLE':
-                            PAGE_TAB_TITLE = setting['value']
+                            PAGE_TAB_TITLE = os.environ.get("PAGE_TAB_TITLE", "VA Chat Room") ## User cannot override
                         case 'AZURE_OPENAI_MODEL':
                             AZURE_OPENAI_MODEL = setting['value']
         else:
