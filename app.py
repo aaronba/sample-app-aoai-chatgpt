@@ -909,8 +909,8 @@ def read_frontend_settings():
         # Default Frontend Settings via Environment Variables
         AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "True") == "True"
         FEEDBACK_ENABLED = AZURE_COSMOSDB_ENABLE_FEEDBACK and AZURE_COSMOSDB_DATABASE not in [None, ""]
-        HEADER_TITLE = os.environ.get("HEADER_TITLE", "VA Office of the CTO")
-        PAGE_TAB_TITLE = os.environ.get("PAGE_TAB_TITLE", "VA Chat Room")
+        HEADER_TITLE = os.environ.get("HEADER_TITLE", "TryOpenAI")
+        PAGE_TAB_TITLE = os.environ.get("PAGE_TAB_TITLE", "TryOpenAI Chat Room")
         AZURE_OPENAI_DEPLOYMENTS = os.environ.get("AZURE_OPENAI_DEPLOYMENTS", "gpt-35-turbo,gpt-4") ## These are available Deployments, not Models in Azure
         AZURE_OPENAI_MODEL = os.environ.get("AZURE_OPENAI_MODEL", "gpt-35-turbo")
 
@@ -932,9 +932,9 @@ def read_frontend_settings():
                         case 'FEEDBACK_ENABLED':
                             FEEDBACK_ENABLED = AZURE_COSMOSDB_ENABLE_FEEDBACK and AZURE_COSMOSDB_DATABASE not in [None, ""] ## User cannot override
                         case 'HEADER_TITLE':
-                            HEADER_TITLE = os.environ.get("HEADER_TITLE", "VA Office of the CTO") ## User cannot override
+                            HEADER_TITLE = os.environ.get("HEADER_TITLE", "TryOpenAI") ## User cannot override
                         case 'PAGE_TAB_TITLE':
-                            PAGE_TAB_TITLE = os.environ.get("PAGE_TAB_TITLE", "VA Chat Room") ## User cannot override
+                            PAGE_TAB_TITLE = os.environ.get("PAGE_TAB_TITLE", "TryOpenAI Chat Room") ## User cannot override
                         case 'AZURE_OPENAI_MODEL':
                             AZURE_OPENAI_MODEL = setting['value']
         else:
