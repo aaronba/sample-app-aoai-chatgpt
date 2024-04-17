@@ -3,7 +3,7 @@ name: Docker Image CI
 on:
   push:
     branches:
-    - main
+    - fix-for-double-dot
 
 jobs:
 
@@ -26,9 +26,9 @@ jobs:
     - name: Build the Docker image
       run:         
         docker build . --file WebApp.Dockerfile --tag ${{ secrets.ACR_LOGIN_SERVER }}/sample-app-aoai-chatgpt:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER;
-        docker tag ${{ secrets.ACR_LOGIN_SERVER }}/sample-app-aoai-chatgpt:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER ${{ secrets.ACR_LOGIN_SERVER }}/sample-app-aoai-chatgpt:latest;
+        docker tag ${{ secrets.ACR_LOGIN_SERVER }}/sample-app-aoai-chatgpt:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER ${{ secrets.ACR_LOGIN_SERVER }}/sample-app-aoai-chatgpt:fix-for-double-dot;
         docker push ${{ secrets.ACR_LOGIN_SERVER }}/sample-app-aoai-chatgpt:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER;
-        docker push ${{ secrets.ACR_LOGIN_SERVER }}/sample-app-aoai-chatgpt:latest;
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/sample-app-aoai-chatgpt:fix-for-double-dot;
 
         # docker build . --file WebApp.Dockerfile --tag docker.pkg.github.com/${{ github.repository }}/sample-app-aoai-chatgpt:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER;
         # docker tag docker.pkg.github.com/${{ github.repository }}/sample-app-aoai-chatgpt:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER docker.pkg.github.com/${{ github.repository }}/sample-app-aoai-chatgpt:latest;
