@@ -537,7 +537,6 @@ def conversation_with_data(request_body, model):
         return Response(stream_with_data(body, headers, endpoint, history_metadata), mimetype='text/event-stream')
 
 def stream_without_data(response, history_metadata={}):
-    responseText = ""
     for line in response:
         if line.choices:
             deltaText = line.choices[0].delta.content
@@ -546,20 +545,20 @@ def stream_without_data(response, history_metadata={}):
         if deltaText and deltaText != "[DONE]":
             responseText = deltaText
 
-        response_obj = {
-            "id": message_uuid,
-            "model": line.model,
-            "created": line.created,
-            "object": line.object,
-            "choices": [{
-                "messages": [{
-                    "role": "assistant",
-                    "content": responseText
-                }]
-            }],
-            "history_metadata": history_metadata
-        }
-        yield format_as_ndjson(response_obj)
+            response_obj = {
+                "id": message_uuid,
+                "model": line.model,
+                "created": line.created,
+                "object": line.object,
+                "choices": [{
+                    "messages": [{
+                        "role": "assistant",
+                        "content": responseText
+                    }]
+                }],
+                "history_metadata": history_metadata
+            }
+            yield format_as_ndjson(response_obj)
 
 def conversation_without_data(request_body, model):
     client = AzureOpenAI(azure_endpoint=AZURE_OPENAI_ENDPOINT if AZURE_OPENAI_ENDPOINT else f"https://{AZURE_OPENAI_RESOURCE}.openai.azure.com/",
