@@ -17,6 +17,27 @@ from backend.usersettings.cosmosdbserviceUserSettings import CosmosUserSettingsC
 
 load_dotenv()
 
+
+# UI configuration (optional)
+UI_TITLE = os.environ.get("UI_TITLE") or "Contoso"
+UI_LOGO = os.environ.get("UI_LOGO")
+UI_CHAT_LOGO = os.environ.get("UI_CHAT_LOGO")
+UI_CHAT_TITLE = os.environ.get("UI_CHAT_TITLE") or "Start chatting"
+UI_CHAT_DESCRIPTION = (
+    os.environ.get("UI_CHAT_DESCRIPTION")
+    or "This chatbot is configured to answer your questions"
+)
+UI_FAVICON = os.environ.get("UI_FAVICON") or "/favicon.ico"
+UI_SHOW_SHARE_BUTTON = os.environ.get("UI_SHOW_SHARE_BUTTON", "true").lower() == "true"
+UI_FOOTER_DISCLAIMER = os.environ.get("UI_FOOTER_DISCLAIMER")
+UI_QUESTION_PLACEHOLDER = os.environ.get("UI_QUESTION_PLACEHOLDER") or "Ask a question"   
+
+# Beta Settings
+BETA_ENABLED=os.environ.get("BETA_ENABLED", "false").lower() == "true"
+BETA_HEADER=os.environ.get("BETA_HEADER", "Beta")
+
+
+
 app = Flask(__name__, static_folder="static")
 
 # Static Files
@@ -945,7 +966,20 @@ def read_frontend_settings():
             "header_title": HEADER_TITLE,
             "page_tab_title": PAGE_TAB_TITLE,
             "azure_openai_deployments": AZURE_OPENAI_DEPLOYMENTS, ## available options for selection by user
-            "azure_openai_model": AZURE_OPENAI_MODEL
+            "azure_openai_model": AZURE_OPENAI_MODEL,
+            "ui": {
+                    "title": UI_TITLE,
+                    "logo": UI_LOGO,
+                    "chat_logo": UI_CHAT_LOGO or UI_LOGO,
+                    "chat_title": UI_CHAT_TITLE,
+                    "chat_description": UI_CHAT_DESCRIPTION,
+                    "show_share_button": UI_SHOW_SHARE_BUTTON,
+                    "show_beta_title": BETA_ENABLED,
+                    "beta_title": BETA_HEADER,
+                    "footer_disclaimer": UI_FOOTER_DISCLAIMER,
+                    "question_input_placeholder": UI_QUESTION_PLACEHOLDER        
+                }
+            
         }
 
         return jsonify(frontend_settings), 200
