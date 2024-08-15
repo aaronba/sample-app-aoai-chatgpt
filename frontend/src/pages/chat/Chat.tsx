@@ -42,6 +42,7 @@ const enum messageStatus {
 
 const Chat = () => {
     const appStateContext = useContext(AppStateContext);
+    const ui = appStateContext?.state.frontendSettings?.ui;
     const AUTH_ENABLED = appStateContext?.state.frontendSettings?.auth_enabled;
     const AZURE_OPENAI_MODEL = appStateContext?.state.frontendSettings?.azure_openai_model!;
     const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
