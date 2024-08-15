@@ -24,6 +24,7 @@ const Layout = () => {
     const [deploymentLabel, setDeploymentLabel] = useState<string>("No Deployment Model defined yet.");
     const [aiModelChoices, setAIModelChoices] = useState<IChoiceGroupOption[]>([]);
     const appStateContext = useContext(AppStateContext);
+    const ui = appStateContext?.state.frontendSettings?.ui;
 
     const handleShareClick = () => {
         setIsSharePanelOpen(true);
