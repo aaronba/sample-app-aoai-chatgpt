@@ -100,6 +100,7 @@ export type ErrorMessage = {
 export type FrontendSettings = {
     auth_enabled: boolean;
     feedback_enabled: boolean;
+    ui?: UI;
     header_title?: string | null;
     page_tab_title?: string | null;
     azure_openai_deployments?: string | null;
