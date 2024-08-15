@@ -97,6 +97,21 @@ export type ErrorMessage = {
     subtitle: string
 }
 
+
+export type UI = {
+    title: string;
+    chat_title: string;
+    chat_description: string;
+    logo?: string;
+    chat_logo?: string;
+    show_share_button?: boolean;
+    beta_title:string;
+    show_beta_title:boolean;
+    footer_disclaimer:string;
+    question_input_placeholder: string;
+     
+}
+
 export type FrontendSettings = {
     auth_enabled: boolean;
     feedback_enabled: boolean;
