@@ -324,3 +324,85 @@ a {
     text-decoration: underline;
     cursor: pointer;
 }
+
+.headerTitle {
+    font-style: normal;
+    font-weight: 600;
+    font-size: 28px;
+    line-height: 28px;
+    display: flex;
+    align-items: flex-end;
+    color: #242424;
+    text-align: center;
+    margin-left: 1em;
+
+}
+
+.headerIcon {
+    height: 48px;
+    width: auto;
+    margin-left: 10px;
+     
+}
+
+
+.disclaimerSectionTitle {    
+    font-weight:normal;    
+    line-height: 16px;    
+    color: #747171;
+    padding-top:0.2em; 
+}
+
+.disclaimerBeta{
+    font-size: 15px;
+    line-height: 10px;
+    font-weight: bold;
+    padding-left: 0.5em;
+}
+
+.buttonContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding-top: 3em;
+}
+
+button.standard {
+    background-color: #0070BC;
+    color:  white;
+    margin: 0 10px;
+    padding: 10px 20px;
+    border: 2px solid #0070BC;
+    border-radius: 5px;
+    width: 100px;
+
+}
+
+button.disabled {
+    background-color: #ffffff;
+    border-color: #0070BC;
+    color: #0070BC;
+    margin: 0 10px;
+    padding: 10px 20px;
+    border: 2px solid #0070BC;
+    border-radius: 5px;
+    width: 100px;
+
+} 
+
+.navbar {
+     
+    justify-content: space-between;
+    font-size: .9em;
+}
+.navbar a {
+    margin: 0;
+    text-decoration:underline;
+    color: rgb(118, 118, 122);
+}
+.navbar a:not(:last-child)::after {
+    content: "|";
+    margin-left: 10px;
+}
+
