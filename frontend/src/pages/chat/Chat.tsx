@@ -56,6 +56,7 @@ const Chat = () => {
     const [clearingChat, setClearingChat] = useState<boolean>(false);
     const [hideErrorDialog, { toggle: toggleErrorDialog }] = useBoolean(true);
     const [errorMsg, setErrorMsg] = useState<ErrorMessage | null>()
+    const [disclaimerDialogState, setDisclaimerDialogState] = useState<boolean>(false);
 
     const errorDialogContentProps = {
         type: DialogType.close,
@@ -438,6 +439,14 @@ const Chat = () => {
 
     }
 
+    const onDisclaimerContinueClicked=()=>{       
+        
+        setDisclaimerDialogState(true);
+    }
+    const onDisclaimerCancelClicked=()=>{ 
+        window.location.href = 'https://www.va.gov/';
+    }
+    
     const clearChat = async () => {
         setClearingChat(true)
         if (appStateContext?.state.currentChat?.id && appStateContext?.state.isCosmosDBAvailable.cosmosDB) {
@@ -722,6 +731,67 @@ const Chat = () => {
                                 conversationId={appStateContext?.state.currentChat?.id ? appStateContext?.state.currentChat?.id : undefined}
                             />
                         </Stack>
+                        <Dialog
+                            /* 
+                            This is the diclaimer dialog. It is shown when the user first enters the chatbot.
+                             */
+                            hidden={disclaimerDialogState} 
+                            onDismiss={()=>{}}                                                                                                    
+                            styles={{
+                    
+                                main: [{
+                                    selectors: {
+                                      ['@media (min-width: 900px)']: {
+                                        maxWidth: '900px',
+                                        background: "#FFFFFF",
+                                        boxShadow: "0px 14px 28.8px rgba(0, 0, 0, 0.24), 0px 0px 8px rgba(0, 0, 0, 0.2)",
+                                        borderRadius: "8px",                                        
+                                        minHeight: '800px',
+                                      }
+                                    }
+                                  }]
+                            }}
+                        >
+                            <Stack horizontal verticalAlign="center">
+                                <img
+                                    src={ui?.logo ? ui.logo : Contoso}
+                                    className={styles.headerIcon}
+                                    aria-title={ui?.title}
+                                    alt={ui?.title}
+                                />
+                                 
+                                <h1 className={styles.headerTitle}>{ui?.chat_title}</h1>{ui?.show_beta_title && (
+                                    <sup className={styles.disclaimerBeta}>{ui?.beta_title}</sup>
+                                )}                               
+                            </Stack>
+                            <Stack>
+                                <div className={styles.disclaimerSectionTitle}>
+                                    ENTER WELCOME TEXT HERE
+                                </div>                              
+                            
+                                <div className={styles.disclaimerSectionTitle}>
+                                    <h3>HEADING 1</h3>                                    
+                                    Heading 1 text
+                                </div>
+                                <div className={styles.disclaimerSectionTitle}>
+                                    <h3>Heading 2</h3>
+                                    Heading 2 text
+                                </div>
+                                                             
+                                <div className={styles.navbar}>
+                                    <a href="https://www.va.gov/" >Contact Us</a>
+                                    <a href="https://www.va.gov/" target="_blank">Privacy Program</a>
+                                    <a href="https://www.va.gov/" target="_blank">Chatbot Disclaimer</a>
+                                    <a href="https://www.va.gov/" target="_blank">Website Disclaimer</a>
+                                    <a href="https://www.va.gov/" target="_blank">Information Quality Guideliness</a>
+                                    <a href="https://www.va.gov/" target="_blank">Accessibility</a>                                    
+                                </div>
+                            </Stack>
+                           <Stack horizontal verticalAlign="center" className={styles.buttonContainer}>
+                                <DefaultButton ariaLabel="Return to site" title="Return to site" className ={styles.disabled} onClick={()=>onDisclaimerCancelClicked()}>Cancel</DefaultButton>
+                                <DefaultButton  ariaLabel="Go to chatbot" title="Go to chatbot" className ={styles.standard} onClick={()=>onDisclaimerContinueClicked()} >Continue</DefaultButton>
+                            </Stack>
+                        </Dialog>
                     </div>
                     {/* Citation Panel */}
                     {messages && messages.length > 0 && isCitationPanelOpen && activeCitation && (
