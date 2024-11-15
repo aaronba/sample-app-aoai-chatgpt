@@ -1,9 +1,9 @@
-name: Docker Image Build
+name: Docker Image Build Upstream Latest Updates
 
 on:
   pull_request:
     branches:
-    - main
+    - upstream-latest-updates
 
 jobs:
 
