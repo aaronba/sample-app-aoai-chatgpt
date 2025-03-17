@@ -4,6 +4,12 @@ RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 WORKDIR /home/node/app 
 COPY ./frontend/package*.json ./  
 USER node
+
+# Install Python and set the PYTHON environment variable
+RUN apk add --no-cache python3 make g++ \
+    && ln -sf python3 /usr/bin/python \
+    && export PYTHON=/usr/bin/python3
+
 RUN npm ci  
 COPY --chown=node:node ./frontend/ ./frontend  
 COPY --chown=node:node ./static/ ./static  
