@@ -29,7 +29,10 @@
     "react-uuid": "^2.0.0",
     "rehype-raw": "^6.1.1",
     "remark-gfm": "^3.0.1",
-    "remark-supersub": "^1.0.0"
+    "remark-supersub": "^1.0.0",
+    "canvas": "^3.1.0",
+    "pdfjs-dist": "^4.10.38",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.2",

@@ -362,12 +362,24 @@ a {
 }
 
 .uploadedImageChat {
-  position: absolute;
-  right: -23px;
-  bottom: -35px;
-  max-width: 70%;
-  max-height: 70%;
+ 
+  max-width: 100px; /* Adjust the size as needed */
+  max-height: 100px; /* Adjust the size as needed */
   border-radius: 4px;
+}
+
+.chatMessageUserContent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px; /* Adjust the gap as needed */
+}
+
+.imageContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px; /* Add gap between images */
+  margin-top:50px;
 }
 
 @media (max-width: 480px) {

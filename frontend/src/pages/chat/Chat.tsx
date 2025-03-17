@@ -180,138 +180,141 @@ const Chat = () => {
   }
 
   const makeApiRequestWithoutCosmosDB = async (question: ChatMessage["content"], conversationId?: string) => {
-    setIsLoading(true)
-    setShowLoadingMessage(true)
-    const abortController = new AbortController()
-    abortFuncs.current.unshift(abortController)
+    setIsLoading(true);
+    setShowLoadingMessage(true);
+    const abortController = new AbortController();
+    abortFuncs.current.unshift(abortController);
+  
+    
+    const questionContent   = Array.isArray(question) && question.length>=2
+      ? question.map((item) => ('text' in item ? { type: "text", text: item.text } : { type: "image_url", image_url: { url: item.image_url.url, detail:"high"} }))
+      : [{ type: "text", text: question as string }];
 
-    const questionContent = typeof question === 'string' ? question : [{ type: "text", text: question[0].text }, { type: "image_url", image_url: { url: question[1].image_url.url } }]
-    question = typeof question !== 'string' && question[0]?.text?.length > 0 ? question[0].text : question
-
+  
     const userMessage: ChatMessage = {
       id: uuid(),
       role: 'user',
-      content: questionContent as string,
-      date: new Date().toISOString()
-    }
-
-    let conversation: Conversation | null | undefined
+      content: questionContent as ChatMessage["content"],
+      date: new Date().toISOString(),
+    };
+  
+    let conversation: Conversation | null | undefined;
     if (!conversationId) {
       conversation = {
         id: conversationId ?? uuid(),
         title: question as string,
         messages: [userMessage],
-        date: new Date().toISOString()
-      }
+        date: new Date().toISOString(),
+      };
     } else {
-      conversation = appStateContext?.state?.currentChat
+      conversation = appStateContext?.state?.currentChat;
       if (!conversation) {
-        console.error('Conversation not found.')
-        setIsLoading(false)
-        setShowLoadingMessage(false)
-        abortFuncs.current = abortFuncs.current.filter(a => a !== abortController)
-        return
+        console.error('Conversation not found.');
+        setIsLoading(false);
+        setShowLoadingMessage(false);
+        abortFuncs.current = abortFuncs.current.filter((a) => a !== abortController);
+        return;
       } else {
-        conversation.messages.push(userMessage)
+        conversation.messages.push(userMessage);
       }
     }
-
-    appStateContext?.dispatch({ type: 'UPDATE_CURRENT_CHAT', payload: conversation })
-    setMessages(conversation.messages)
-
+  
+    appStateContext?.dispatch({ type: 'UPDATE_CURRENT_CHAT', payload: conversation });
+    setMessages(conversation.messages);
+  
     const request: ConversationRequest = {
-      messages: [...conversation.messages.filter(answer => answer.role !== ERROR)]
-    }
-
-    let result = {} as ChatResponse
+      messages: [...conversation.messages.filter((answer) => answer.role !== ERROR)],
+    };
+  
+    let result = {} as ChatResponse;
     try {
-      const response = await conversationApi(request, abortController.signal)
+      const response = await conversationApi(request, abortController.signal);
       if (response?.body) {
-        const reader = response.body.getReader()
-
-        let runningText = ''
+        const reader = response.body.getReader();
+  
+        let runningText = '';
         while (true) {
-          setProcessMessages(messageStatus.Processing)
-          const { done, value } = await reader.read()
-          if (done) break
-
-          var text = new TextDecoder('utf-8').decode(value)
-          const objects = text.split('\n')
-          objects.forEach(obj => {
+          setProcessMessages(messageStatus.Processing);
+          const { done, value } = await reader.read();
+          if (done) break;
+  
+          var text = new TextDecoder('utf-8').decode(value);
+          const objects = text.split('\n');
+          objects.forEach((obj) => {
             try {
               if (obj !== '' && obj !== '{}') {
-                runningText += obj
-                result = JSON.parse(runningText)
+                runningText += obj;
+                result = JSON.parse(runningText);
                 if (result.choices?.length > 0) {
-                  result.choices[0].messages.forEach(msg => {
-                    msg.id = result.id
-                    msg.date = new Date().toISOString()
-                  })
-                  if (result.choices[0].messages?.some(m => m.role === ASSISTANT)) {
-                    setShowLoadingMessage(false)
+                  result.choices[0].messages.forEach((msg) => {
+                    msg.id = result.id;
+                    msg.date = new Date().toISOString();
+                  });
+                  if (result.choices[0].messages?.some((m) => m.role === ASSISTANT)) {
+                    setShowLoadingMessage(false);
                   }
-                  result.choices[0].messages.forEach(resultObj => {
-                    processResultMessage(resultObj, userMessage, conversationId)
-                  })
+                  result.choices[0].messages.forEach((resultObj) => {
+                    processResultMessage(resultObj, userMessage, conversationId);
+                  });
                 } else if (result.error) {
-                  throw Error(result.error)
+                  throw Error(result.error);
                 }
-                runningText = ''
+                runningText = '';
               }
             } catch (e) {
               if (!(e instanceof SyntaxError)) {
-                console.error(e)
-                throw e
+                console.error(e);
+                throw e;
               } else {
-                console.log('Incomplete message. Continuing...')
+                console.log('Incomplete message. Continuing...');
               }
             }
-          })
+          });
         }
-        conversation.messages.push(toolMessage, assistantMessage)
-        appStateContext?.dispatch({ type: 'UPDATE_CURRENT_CHAT', payload: conversation })
-        setMessages([...messages, toolMessage, assistantMessage])
+        conversation.messages.push(toolMessage, assistantMessage);
+        appStateContext?.dispatch({ type: 'UPDATE_CURRENT_CHAT', payload: conversation });
+        setMessages([...messages, toolMessage, assistantMessage]);
       }
     } catch (e) {
       if (!abortController.signal.aborted) {
         let errorMessage =
-          'An error occurred. Please try again. If the problem persists, please contact the site administrator.'
+          'An error occurred. Please try again. If the problem persists, please contact the site administrator.';
         if (result.error?.message) {
-          errorMessage = result.error.message
+          errorMessage = result.error.message;
         } else if (typeof result.error === 'string') {
-          errorMessage = result.error
+          errorMessage = result.error;
         }
-
-        errorMessage = parseErrorMessage(errorMessage)
-
+  
+        errorMessage = parseErrorMessage(errorMessage);
+  
         let errorChatMsg: ChatMessage = {
           id: uuid(),
           role: ERROR,
           content: errorMessage,
-          date: new Date().toISOString()
-        }
-        conversation.messages.push(errorChatMsg)
-        appStateContext?.dispatch({ type: 'UPDATE_CURRENT_CHAT', payload: conversation })
-        setMessages([...messages, errorChatMsg])
+          date: new Date().toISOString(),
+        };
+        conversation.messages.push(errorChatMsg);
+        appStateContext?.dispatch({ type: 'UPDATE_CURRENT_CHAT', payload: conversation });
+        setMessages([...messages, errorChatMsg]);
       } else {
-        setMessages([...messages, userMessage])
+        setMessages([...messages, userMessage]);
       }
     } finally {
-      setIsLoading(false)
-      setShowLoadingMessage(false)
-      abortFuncs.current = abortFuncs.current.filter(a => a !== abortController)
-      setProcessMessages(messageStatus.Done)
+      setIsLoading(false);
+      setShowLoadingMessage(false);
+      abortFuncs.current = abortFuncs.current.filter((a) => a !== abortController);
+      setProcessMessages(messageStatus.Done);
     }
-
-    return abortController.abort()
-  }
+  
+    return abortController.abort();
+  };
 
   const makeApiRequestWithCosmosDB = async (question: ChatMessage["content"], conversationId?: string) => {
     setIsLoading(true)
     setShowLoadingMessage(true)
     const abortController = new AbortController()
     abortFuncs.current.unshift(abortController)
-    const questionContent = typeof question === 'string' ? question : [{ type: "text", text: question[0].text }, { type: "image_url", image_url: { url: question[1].image_url.url } }]
+    const questionContent = typeof question === 'string' ? question : [{ type: "text", text: question[0].text }, { type: "image_url", image_url: { url: question[1].image_url.url, detail:"high" } }]
     question = typeof question !== 'string' && question[0]?.text?.length > 0 ? question[0].text : question
 
     const userMessage: ChatMessage = {
@@ -757,6 +760,8 @@ const Chat = () => {
     )
   }
 
+  const OYD_ENABLED = appStateContext?.state.frontendSettings?.oyd_enabled || false;
+
   return (
     <div className={styles.container} role="main">
       {showAuthMessage ? (
@@ -800,10 +805,24 @@ const Chat = () => {
                 {messages.map((answer, index) => (
                   <>
                     {answer.role === 'user' ? (
-                      <div className={styles.chatMessageUser} tabIndex={0}>
+                        <div className={styles.chatMessageUser} tabIndex={0}>
                         <div className={styles.chatMessageUserMessage}>
-                          {typeof answer.content === "string" && answer.content ? answer.content : Array.isArray(answer.content) ? <>{answer.content[0].text} <img className={styles.uploadedImageChat} src={answer.content[1].image_url.url} alt="Uploaded Preview" /></> : null}
-                        </div>
+                          {Array.isArray(answer.content) ? (
+                          <div className={styles.chatMessageUserContent}>
+                            {answer.content.map((item, idx) =>
+                            'text' in item ? (
+                              <span key={idx}>{item.text} </span>
+                            ) : (
+                              <div key={idx} className={styles.imageContainer}>
+                                <img className={styles.uploadedImageChat} src={item.image_url.url} alt="Uploaded Preview" />
+                              </div>                              
+                            )
+                            )}
+                          </div>
+                          ) : (
+                          typeof answer.content === "string" && answer.content
+                          )}
+                        </div>                       
                       </div>
                     ) : answer.role === 'assistant' ? (
                       <div className={styles.chatMessageGpt}>
@@ -935,8 +954,8 @@ const Chat = () => {
                 clearOnSend
                 placeholder="Type a new question..."
                 disabled={isLoading}
-                onSend={(question, id) => {
-                  appStateContext?.state.isCosmosDBAvailable?.cosmosDB
+                onSend={(question, id) => {                  
+                  appStateContext?.state.isCosmosDBAvailable?.cosmosDB && OYD_ENABLED   
                     ? makeApiRequestWithCosmosDB(question, id)
                     : makeApiRequestWithoutCosmosDB(question, id)
                 }}
