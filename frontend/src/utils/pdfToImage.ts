@@ -28,7 +28,7 @@ export async function convertPdfToImages(pdfBlob: Blob): Promise<HTMLImageElemen
   // Loop through all the pages
   for (let i = 0; i < pdf.numPages; i++) {
     const page = await pdf.getPage(i + 1);
-    const viewport = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: 3 }); // Increase the scale factor for higher resolution
 
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -85,10 +85,7 @@ export async function mergeImagesToGrid(images: HTMLImageElement[]): Promise<str
     x++;
   }
 
-  // Return the merged canvas as a Base64 image
-  // write the image to a file
-  //fs.writeFileSync('c:\temp\merged_image.png', canvas.toBuffer('image/png'));
-
+  // Return the merged canvas as a Base64 image  
   return canvas.toDataURL();
 }
 
