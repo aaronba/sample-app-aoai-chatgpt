@@ -44,7 +44,7 @@ export async function processexcelFileToImage(excelBlob: Blob): Promise<string> 
         });
 
         // Set font and text alignment
-        doc.setFont('Arial', 'normal');
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(12);
 
         // Draw the Excel data onto the PDF
@@ -77,7 +77,7 @@ export async function processexcelFileToImage(excelBlob: Blob): Promise<string> 
     const pdfBlob = doc.output('blob');
 
     // Call processPdfToGridImage to create a merged image
-    const mergedImageBase64 = await processPdfToGridImage(pdfBlob); // Remove empty pages
+    const mergedImageBase64 = await processPdfToGridImage(pdfBlob, 3); // Remove empty pages
 
     // Return the merged image as a base64-encoded string
     return mergedImageBase64;

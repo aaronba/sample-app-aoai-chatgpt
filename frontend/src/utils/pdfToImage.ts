@@ -20,7 +20,7 @@ function loadImageAsync(src: string): Promise<HTMLImageElement> {
 }
 
 // Exporting the function to make it available for use elsewhere
-export async function convertPdfToImages(pdfBlob: Blob): Promise<HTMLImageElement[]> {
+export async function convertPdfToImages(pdfBlob: Blob, scale:number ): Promise<HTMLImageElement[]> {
   const pdfData = await pdfBlob.arrayBuffer();
   const pdf = await pdfjsLib.getDocument(pdfData).promise;
   const images: HTMLImageElement[] = [];
@@ -28,7 +28,7 @@ export async function convertPdfToImages(pdfBlob: Blob): Promise<HTMLImageElemen
   // Loop through all the pages
   for (let i = 0; i < pdf.numPages; i++) {
     const page = await pdf.getPage(i + 1);
-    const viewport = page.getViewport({ scale: 3 }); // Increase the scale factor for higher resolution
+    const viewport = page.getViewport({ scale: scale }); // Increase the scale factor for higher resolution
 
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -90,9 +90,9 @@ export async function mergeImagesToGrid(images: HTMLImageElement[]): Promise<str
 }
 
 // Main function to process PDF and return merged Base64 image
-export async function processPdfToGridImage(pdfBlob: Blob): Promise<string> {
+export async function processPdfToGridImage(pdfBlob: Blob,scale:number=1): Promise<string> {
   // Convert PDF to images
-  const images = await convertPdfToImages(pdfBlob);
+  const images = await convertPdfToImages(pdfBlob,scale);
 
   // Merge the images into a 4x4 grid and return as Base64 image
   return await mergeImagesToGrid(images);
