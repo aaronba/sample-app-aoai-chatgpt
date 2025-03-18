@@ -66,27 +66,60 @@ export async function convertPdfToImages(pdfBlob: Blob, scale:number ): Promise<
 }
 
 // Function to merge images into a grid with 4 columns and dynamic rows
-export async function mergeImagesToGrid(images: HTMLImageElement[]): Promise<string> {
+export async function mergeImagesToGrid(images: HTMLImageElement[], batchSize: number = 100): Promise<string> {
   const columns = 4; // 4 columns
-  const rows = Math.ceil(images.length / columns); // Calculate the number of rows needed
   const imageSize = images[0].width; // Assume all images are the same size
-  const canvas = createCanvas(imageSize * columns, imageSize * rows);
-  const context = canvas.getContext('2d');
-  let x = 0, y = 0;
-
-  for (let i = 0; i < images.length; i++) {
-    if (x >= columns) {
-      x = 0;
-      y++;
-    }
-
-    // Ensure the image is drawn on the canvas
-    context?.drawImage(images[i] as any, x * imageSize, y * imageSize);
-    x++;
+  const rows = Math.ceil(images.length / columns); // Calculate the number of rows
+  
+  // Create a large enough canvas for all images
+  const totalCanvas = document.createElement('canvas');
+  totalCanvas.width = imageSize * columns;
+  totalCanvas.height = imageSize * rows;
+  const totalContext = totalCanvas.getContext('2d');
+  
+  if (!totalContext) {
+    throw new Error('Failed to get canvas context');
   }
 
-  // Return the merged canvas as a Base64 image  
-  return canvas.toDataURL();
+  // Process in batches to avoid memory issues
+  const batchCount = Math.ceil(images.length / batchSize);
+  
+  for (let b = 0; b < batchCount; b++) {
+    const startIdx = b * batchSize;
+    const endIdx = Math.min((b + 1) * batchSize, images.length);
+    const batchImages = images.slice(startIdx, endIdx);
+    
+    // Create a temporary canvas for this batch
+    const batchCanvas = document.createElement('canvas');
+    batchCanvas.width = totalCanvas.width;
+    batchCanvas.height = imageSize * Math.ceil(batchImages.length / columns);
+    const batchContext = batchCanvas.getContext('2d');
+    
+    if (!batchContext) {
+      continue;
+    }
+    
+    // Draw this batch of images to the batch canvas
+    for (let i = 0; i < batchImages.length; i++) {
+      const x = (i % columns) * imageSize;
+      const y = Math.floor(i / columns) * imageSize;
+      
+      batchContext.drawImage(batchImages[i], x, y);
+    }
+    
+    // Calculate where this batch should be drawn on the total canvas
+    const batchY = Math.floor(startIdx / columns) * imageSize;
+    
+    // Draw the batch canvas onto the total canvas
+    totalContext.drawImage(batchCanvas, 0, batchY);
+    
+    // Clean up to free memory
+    batchCanvas.width = 0;
+    batchCanvas.height = 0;
+  }
+  
+  // Return the merged canvas as a Base64 image
+  return totalCanvas.toDataURL();
 }
 
 // Main function to process PDF and return merged Base64 image
