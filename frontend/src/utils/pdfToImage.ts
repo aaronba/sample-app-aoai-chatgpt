@@ -81,41 +81,21 @@ export async function mergeImagesToGrid(images: HTMLImageElement[], batchSize: n
     throw new Error('Failed to get canvas context');
   }
 
-  // Process in batches to avoid memory issues
-  const batchCount = Math.ceil(images.length / batchSize);
-  
-  for (let b = 0; b < batchCount; b++) {
-    const startIdx = b * batchSize;
-    const endIdx = Math.min((b + 1) * batchSize, images.length);
-    const batchImages = images.slice(startIdx, endIdx);
+  // Draw images directly to the total canvas
+  for (let i = 0; i < images.length; i++) {
+    const col = i % columns;
+    const row = Math.floor(i / columns);
     
-    // Create a temporary canvas for this batch
-    const batchCanvas = document.createElement('canvas');
-    batchCanvas.width = totalCanvas.width;
-    batchCanvas.height = imageSize * Math.ceil(batchImages.length / columns);
-    const batchContext = batchCanvas.getContext('2d');
+    const x = col * imageSize;
+    const y = row * imageSize;
     
-    if (!batchContext) {
-      continue;
+    totalContext.drawImage(images[i], x, y);
+    
+    // Process in small batches to avoid memory issues
+    if (i > 0 && i % batchSize === 0) {
+      // Give the browser a chance to clean up and process other tasks
+      await new Promise(resolve => setTimeout(resolve, 0));
     }
-    
-    // Draw this batch of images to the batch canvas
-    for (let i = 0; i < batchImages.length; i++) {
-      const x = (i % columns) * imageSize;
-      const y = Math.floor(i / columns) * imageSize;
-      
-      batchContext.drawImage(batchImages[i], x, y);
-    }
-    
-    // Calculate where this batch should be drawn on the total canvas
-    const batchY = (Math.floor(startIdx / columns) * imageSize) + 10;
-    
-    // Draw the batch canvas onto the total canvas
-    totalContext.drawImage(batchCanvas, 0, batchY);
-    
-    // Clean up to free memory
-    batchCanvas.width = 0;
-    batchCanvas.height = 0;
   }
   
   // Return the merged canvas as a Base64 image
