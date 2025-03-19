@@ -108,7 +108,7 @@ export async function mergeImagesToGrid(images: HTMLImageElement[], batchSize: n
     }
     
     // Calculate where this batch should be drawn on the total canvas
-    const batchY = Math.floor(startIdx / columns) * imageSize;
+    const batchY = (Math.floor(startIdx / columns) * imageSize) + 10;
     
     // Draw the batch canvas onto the total canvas
     totalContext.drawImage(batchCanvas, 0, batchY);

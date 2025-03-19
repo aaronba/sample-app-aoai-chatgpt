@@ -45,6 +45,7 @@ def create_app():
     app = Quart(__name__)
     app.register_blueprint(bp)
     app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
     
     @app.before_serving
     async def init():

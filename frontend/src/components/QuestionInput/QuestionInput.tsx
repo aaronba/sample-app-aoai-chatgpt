@@ -11,6 +11,7 @@ import { resizeImage } from '../../utils/resizeImage'
 
 import { processPdfToGridImage } from '../../utils/pdfToImage';
 import { processexcelFileToImage } from '../../utils/excelToImage';
+import docxToImage from '../../utils/docxToImage';
 
 interface Props {
   onSend: (question: ChatMessage['content'], id?: string) => void
@@ -40,6 +41,10 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
         else if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.type === 'application/vnd.ms-excel') {
           const mergedExcelImage = await processexcelFileToImage(file);
           base64Array.push(mergedExcelImage);
+        } 
+        else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+          const mergedDocxImage = await docxToImage(file);
+          base64Array.push(mergedDocxImage);
         } 
         else {
           const base64 = await convertToBase64(file);
@@ -116,7 +121,7 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
             type="file"
             id="fileInput"
             onChange={(event) => handleImageUpload(event)}
-            accept="image/*,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" multiple
+            accept="image/*,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple
             className={styles.fileInput}
           />
           <label htmlFor="fileInput" className={styles.fileLabel} aria-label='Upload File'>

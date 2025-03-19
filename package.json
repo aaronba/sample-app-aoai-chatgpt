@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "canvas": "^3.1.0",
+    "docx": "^9.3.0",
+    "html-to-image": "^1.11.13",
+    "mammoth": "^1.9.0"
+  }
+}
