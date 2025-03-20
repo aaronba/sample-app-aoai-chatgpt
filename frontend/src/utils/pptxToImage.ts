@@ -47,22 +47,50 @@ export async function pptxToImage(pptxBlob: Blob): Promise<string> {
                         const slideXml = await slideFileContent.async("text");
                         const slideDoc = new DOMParser().parseFromString(slideXml, "text/xml");
                         const textNodes = slideDoc.getElementsByTagNameNS(xmlNamespace, "t");
+                       
+                        // Ensure every text node starts on a new line and every paragraph node starts after two lines
                         let slideText = "";
                         for (let i = 0; i < textNodes.length; i++) {
-                            slideText += textNodes[i].textContent + " ";
+                            const parentNode = textNodes[i].parentNode;
+                            if (parentNode && parentNode.nodeName === "a:p") { // Paragraph node
+                                slideText += "\n\n" + textNodes[i].textContent;
+                            } else { // Text node
+                                slideText += "\n" + textNodes[i].textContent;
+                            }
                         }
 
                         // Add slide text to the PDF with text wrapping and pagination
                         const lines = pdf.splitTextToSize(slideText, maxWidth); // Adjust width as needed
                         let y = 10;
                         for (const line of lines) {
-                            if (y + 10 > 780) { // Adjust height as needed
+                            if (y + 10 > pdf.internal.pageSize.height - 80) { // Adjust height as needed
                                 pdf.addPage();
                                 y = 10;
                             }
-                            pdf.text(line, 10, y,{ align: 'left' });
+                            pdf.text(line, 10, y, { align: 'left' });
                             y += 10;
                         }
+
+                        // Add images to the PDF at the appropriate position
+                        const imageNodes = slideDoc.getElementsByTagNameNS(xmlNamespace, "blip");
+                        for (let i = 0; i < imageNodes.length; i++) {
+                            const imageId = imageNodes[i].getAttribute("r:embed");
+                            const imageFile = zip.file(`ppt/media/${imageId}.jpeg`);
+                            if (imageFile) {
+                                const imageData = await imageFile.async("base64");
+                                const img = new Image();
+                                img.src = `data:image/jpeg;base64,${imageData}`;
+                                const imageNode = imageNodes[i].parentNode?.parentNode as Element | null;
+                                if (imageNode) {
+                                    const x = parseFloat(imageNode.getAttribute("x") || "10");
+                                    const y = parseFloat(imageNode.getAttribute("y") || "10");
+                                    const width = parseFloat(imageNode.getAttribute("cx") || `${maxWidth}`);
+                                    const height = parseFloat(imageNode.getAttribute("cy") || "100");
+                                    pdf.addImage(img, "JPEG", x, y, width, height); // Adjust dimensions as needed
+                                }
+                            }
+                        }
+
                         pdf.addPage(); // Add a new page for the next slide
                     }
                 }
