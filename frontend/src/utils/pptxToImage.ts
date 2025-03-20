@@ -27,14 +27,9 @@ export async function pptxToImage(pptxBlob: Blob): Promise<string> {
                 // Create a variable to accumulate extracted text
                 let text = "";
 
-                // Create a PDF in portrait mode
-                // const pdf = new jsPDF({
-                //     orientation: "portrait",
-                //     unit: "px",
-                //     format: [600, 800], // Adjust slide dimensions as needed
-                // });
-                const pdf = new jsPDF();
-                pdf.setFontSize(12);
+                // Create a PDF in landscape mode
+                const pdf = new jsPDF({ orientation: "landscape" });
+                pdf.setFontSize(10);
                 pdf.setFont("helvetica", "normal");
                
 
@@ -43,7 +38,7 @@ export async function pptxToImage(pptxBlob: Blob): Promise<string> {
                 for (const slideFile of slideFiles) {
                     const slideFileContent = zip.file(slideFile);
                     if (slideFileContent) {
-                        const maxWidth = pdf.internal.pageSize.width - 20; 
+                        const maxWidth = pdf.internal.pageSize.width ;//- 20; 
                         const slideXml = await slideFileContent.async("text");
                         const slideDoc = new DOMParser().parseFromString(slideXml, "text/xml");
                         const textNodes = slideDoc.getElementsByTagNameNS(xmlNamespace, "t");
@@ -60,10 +55,10 @@ export async function pptxToImage(pptxBlob: Blob): Promise<string> {
                         }
 
                         // Add slide text to the PDF with text wrapping and pagination
-                        const lines = pdf.splitTextToSize(slideText, maxWidth); // Adjust width as needed
+                        const lines = pdf.splitTextToSize(slideText, maxWidth,{preserveNewlines:true}); // Adjust width as needed
                         let y = 10;
                         for (const line of lines) {
-                            if (y + 10 > pdf.internal.pageSize.height - 80) { // Adjust height as needed
+                            if (y + 10 > pdf.internal.pageSize.height - 20) { // Adjust height as needed
                                 pdf.addPage();
                                 y = 10;
                             }
