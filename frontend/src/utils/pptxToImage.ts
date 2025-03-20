@@ -1,6 +1,7 @@
+import JSZip from "jszip";
+import { DOMParser } from "xmldom";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import PPTX2Json from "pptx2json";
 import { processPdfToGridImage } from "./pdfToImage";
 
 /**
@@ -16,51 +17,61 @@ export async function pptxToImage(pptxBlob: Blob): Promise<string> {
             reader.readAsArrayBuffer(pptxBlob);
             reader.onload = async () => {
                 const pptxArrayBuffer = reader.result as ArrayBuffer;
-                const uint8Array = new Uint8Array(pptxArrayBuffer); // Ensures correct data format
 
-                
-                // Parse PPTX file to JSON format
-                const pptxParser = new PPTX2Json();
-                const pptxData = await pptxParser.toJson(uint8Array);
+                // Load the PPTX file as a ZIP archive
+                const zip = await JSZip.loadAsync(pptxArrayBuffer);
 
-                const pdf = new jsPDF({
-                    orientation: "landscape",
-                    unit: "px",
-                    format: [800, 600], // Adjust slide dimensions as needed
-                });
+                // Define the XML namespace for accessing text nodes in PowerPoint slides
+                const xmlNamespace = "http://schemas.openxmlformats.org/drawingml/2006/main";
 
-                // Process slides
-                for (let i = 0; i < pptxData.slides.length; i++) {
-                    const slide = pptxData.slides[i];
+                // Create a variable to accumulate extracted text
+                let text = "";
 
-                    // Create a temporary div to render the slide
-                    const slideContainer = document.createElement("div");
-                    slideContainer.style.width = "800px";
-                    slideContainer.style.height = "600px";
-                    slideContainer.style.position = "absolute";
-                    slideContainer.style.visibility = "hidden";
-                    document.body.appendChild(slideContainer);
+                // Create a PDF in portrait mode
+                // const pdf = new jsPDF({
+                //     orientation: "portrait",
+                //     unit: "px",
+                //     format: [600, 800], // Adjust slide dimensions as needed
+                // });
+                const pdf = new jsPDF();
+                pdf.setFontSize(12);
+                pdf.setFont("helvetica", "normal");
+               
 
-                    // Render slide content dynamically
-                    slideContainer.innerHTML = renderSlideToHTML(slide);
+                // Iterate through each slide, parse its XML, extract text, and add it to the PDF
+                const slideFiles = Object.keys(zip.files).filter((fileName) => fileName.startsWith("ppt/slides/slide"));
+                for (const slideFile of slideFiles) {
+                    const slideFileContent = zip.file(slideFile);
+                    if (slideFileContent) {
+                        const maxWidth = pdf.internal.pageSize.width - 20; 
+                        const slideXml = await slideFileContent.async("text");
+                        const slideDoc = new DOMParser().parseFromString(slideXml, "text/xml");
+                        const textNodes = slideDoc.getElementsByTagNameNS(xmlNamespace, "t");
+                        let slideText = "";
+                        for (let i = 0; i < textNodes.length; i++) {
+                            slideText += textNodes[i].textContent + " ";
+                        }
 
-                    // Convert slide to an image
-                    const slideCanvas = await html2canvas(slideContainer);
-                    const imgData = slideCanvas.toDataURL("image/png");
-
-                    // Add slide image to PDF
-                    if (i > 0) pdf.addPage();
-                    pdf.addImage(imgData, "PNG", 0, 0, 800, 600);
-
-                    // Remove temporary container
-                    document.body.removeChild(slideContainer);
+                        // Add slide text to the PDF with text wrapping and pagination
+                        const lines = pdf.splitTextToSize(slideText, maxWidth); // Adjust width as needed
+                        let y = 10;
+                        for (const line of lines) {
+                            if (y + 10 > 780) { // Adjust height as needed
+                                pdf.addPage();
+                                y = 10;
+                            }
+                            pdf.text(line, 10, y,{ align: 'left' });
+                            y += 10;
+                        }
+                        pdf.addPage(); // Add a new page for the next slide
+                    }
                 }
 
                 // Convert PDF to Blob and return
                 const pdfBlob = pdf.output("blob");
                 const mergedImageBase64 = await processPdfToGridImage(pdfBlob, 1);
-                
-                return mergedImageBase64;
+
+                resolve(mergedImageBase64);
             };
 
             reader.onerror = (error) => reject(error);
@@ -70,22 +81,4 @@ export async function pptxToImage(pptxBlob: Blob): Promise<string> {
     });
 }
 
-/**
- * Renders a slide object as an HTML structure.
- * @param slide - Slide data from pptx2json.
- * @returns HTML string representing the slide.
- */
-function renderSlideToHTML(slide: any): string {
-    let html = `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: ${slide.bgColor || 'white'};">`;
 
-    slide.texts?.forEach((text: any) => {
-        html += `<p style="font-size: ${text.fontSize}px; color: ${text.color};">${text.text}</p>`;
-    });
-
-    slide.images?.forEach((image: any) => {
-        html += `<img src="${image.src}" style="max-width: 100%; max-height: 100%;" />`;
-    });
-
-    html += `</div>`;
-    return html;
-}
