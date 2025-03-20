@@ -31,38 +31,38 @@ export async function pptxToImage(pptxBlob: Blob): Promise<string> {
                 const pdf = new jsPDF({ orientation: "landscape" });
                 pdf.setFontSize(10);
                 pdf.setFont("helvetica", "normal");
-               
 
                 // Iterate through each slide, parse its XML, extract text, and add it to the PDF
                 const slideFiles = Object.keys(zip.files).filter((fileName) => fileName.startsWith("ppt/slides/slide"));
                 for (const slideFile of slideFiles) {
                     const slideFileContent = zip.file(slideFile);
                     if (slideFileContent) {
-                        const maxWidth = pdf.internal.pageSize.width ;//- 20; 
+                        const maxWidth = pdf.internal.pageSize.width; //- 20; 
                         const slideXml = await slideFileContent.async("text");
                         const slideDoc = new DOMParser().parseFromString(slideXml, "text/xml");
                         const textNodes = slideDoc.getElementsByTagNameNS(xmlNamespace, "t");
-                       
+
                         // Ensure every text node starts on a new line and every paragraph node starts after two lines
                         let slideText = "";
                         for (let i = 0; i < textNodes.length; i++) {
                             const parentNode = textNodes[i].parentNode;
-                            if (parentNode && parentNode.nodeName === "a:p") { // Paragraph node
-                                slideText += "\n\n" + textNodes[i].textContent;
-                            } else { // Text node
-                                slideText += "\n" + textNodes[i].textContent;
-                            }
+                            // if (parentNode && parentNode.nodeName === "a:p") { // Paragraph node
+                            //     slideText += "\n\n" + textNodes[i].textContent;
+                            // } else { // Text node
+                            //     slideText += "\n" + textNodes[i].textContent;
+                            // }
+                            slideText += "\n" + textNodes[i].textContent;
                         }
 
                         // Add slide text to the PDF with text wrapping and pagination
-                        const lines = pdf.splitTextToSize(slideText, maxWidth,{preserveNewlines:true}); // Adjust width as needed
+                        const lines = pdf.splitTextToSize(slideText, maxWidth); // Adjust width as needed
                         let y = 10;
                         for (const line of lines) {
                             if (y + 10 > pdf.internal.pageSize.height - 20) { // Adjust height as needed
                                 pdf.addPage();
                                 y = 10;
                             }
-                            pdf.text(line, 10, y, { align: 'left' });
+                            pdf.text(line.trim(), 10, y, { align: 'left' });
                             y += 10;
                         }
 
