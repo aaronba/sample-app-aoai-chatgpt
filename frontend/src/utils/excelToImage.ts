@@ -1,5 +1,4 @@
 import * as XLSX from 'xlsx';
-import { createCanvas } from 'canvas';
 import { jsPDF } from 'jspdf';
 import { processPdfToGridImage } from './pdfToImage';
 

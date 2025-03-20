@@ -1,10 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?worker&url'
-import { createCanvas  } from 'canvas';
 
 // Ensure that the worker is specified (using a CDN link or local path) 2.10.377
-//pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
-//pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/build/pdf.worker.mjs';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 
