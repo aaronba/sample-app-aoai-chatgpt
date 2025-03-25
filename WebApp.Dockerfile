@@ -1,4 +1,4 @@
-FROM node:20-alpine AS frontend  
+FROM node:20-bullseye AS frontend
 RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 
 WORKDIR /home/node/app 
