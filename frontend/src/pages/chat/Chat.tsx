@@ -955,7 +955,7 @@ const Chat = () => {
                 placeholder="Type a new question..."
                 disabled={isLoading}
                 onSend={(question, id) => {                  
-                  appStateContext?.state.isCosmosDBAvailable?.cosmosDB && OYD_ENABLED   
+                  appStateContext?.state.isCosmosDBAvailable?.cosmosDB //&& OYD_ENABLED   
                     ? makeApiRequestWithCosmosDB(question, id)
                     : makeApiRequestWithoutCosmosDB(question, id)
                 }}
