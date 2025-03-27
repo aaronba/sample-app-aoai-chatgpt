@@ -141,7 +141,7 @@ async def init_openai_client():
         endpoint = (
             app_settings.azure_openai.endpoint
             if app_settings.azure_openai.endpoint
-            else f"https://{app_settings.azure_openai.resource}.openai.azure.com/"
+            else f"https://{app_settings.azure_openai.resource}.openai.azure.us/"
         )
 
         # Authentication
@@ -152,7 +152,7 @@ async def init_openai_client():
             async with DefaultAzureCredential() as credential:
                 ad_token_provider = get_bearer_token_provider(
                     credential,
-                    "https://cognitiveservices.azure.com/.default"
+                    "https://cognitiveservices.azure.us/.default"
                 )
 
         # Deployment
@@ -212,7 +212,7 @@ async def init_cosmosdb_client():
     if app_settings.chat_history:
         try:
             cosmos_endpoint = (
-                f"https://{app_settings.chat_history.account}.documents.azure.com:443/"
+                f"https://{app_settings.chat_history.account}.documents.azure.us:443/"
             )
 
             if not app_settings.chat_history.account_key:
