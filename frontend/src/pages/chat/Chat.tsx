@@ -954,13 +954,32 @@ const Chat = () => {
                 clearOnSend
                 placeholder="Type a new question..."
                 disabled={isLoading}
-                onSend={(question, id) => {                  
-                  appStateContext?.state.isCosmosDBAvailable?.cosmosDB //&& OYD_ENABLED   
-                    ? makeApiRequestWithCosmosDB(question, id)
-                    : makeApiRequestWithoutCosmosDB(question, id)
+                onSend={(question, id) => {
+                  // Calculate the size of the payload
+                  const payload = JSON.stringify({ messages: question });
+                  const payloadSizeInBytes = new Blob([payload]).size;
+                  const payloadSizeInMB = payloadSizeInBytes / (1024 * 1024);
+              
+                  // Check if the payload contains an image_url
+                  const hasImageUrl = Array.isArray(question)
+                    ? question.some((item) => 'image_url' in item)
+                    : false;
+              
+                  // Use CosmosDB API if size < 2 MB and no image_url, otherwise fallback
+                  if (
+                    appStateContext?.state.isCosmosDBAvailable?.cosmosDB &&
+                    payloadSizeInMB < 2 &&
+                    !hasImageUrl
+                  ) {
+                    makeApiRequestWithCosmosDB(question, id);
+                  } else {
+                    makeApiRequestWithoutCosmosDB(question, id);
+                  }
                 }}
                 conversationId={
-                  appStateContext?.state.currentChat?.id ? appStateContext?.state.currentChat?.id : undefined
+                  appStateContext?.state.currentChat?.id
+                    ? appStateContext?.state.currentChat?.id
+                    : undefined
                 }
               />
             </Stack>
