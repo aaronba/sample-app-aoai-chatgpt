@@ -599,61 +599,56 @@ def get_frontend_settings():
 
 
 ## Conversation History API ##
-@bp.route("/history/generate", methods=["POST"])
-async def add_conversation():
-    await cosmos_db_ready.wait()
-    authenticated_user = get_authenticated_user_details(request_headers=request.headers)
-    user_id = authenticated_user["user_principal_id"]
-
-    ## check request for conversation_id
-    request_json = await request.get_json()
-    conversation_id = request_json.get("conversation_id", None)
-
-    try:
-        # make sure cosmos is configured
-        if not current_app.cosmos_conversation_client:
-            raise Exception("CosmosDB is not configured or not working")
-
-        # check for the conversation_id, if the conversation is not set, we will create a new one
-        history_metadata = {}
-        if not conversation_id:
-            title = await generate_title(request_json["messages"])
-            conversation_dict = await current_app.cosmos_conversation_client.create_conversation(
-                user_id=user_id, title=title
-            )
-            conversation_id = conversation_dict["id"]
-            history_metadata["title"] = title
-            history_metadata["date"] = conversation_dict["createdAt"]
-
-        ## Format the incoming message object in the "chat/completions" messages format
-        ## then write it to the conversation history in cosmos
-        messages = request_json["messages"]
-        if len(messages) > 0 and messages[-1]["role"] == "user":
-            createdMessageValue = await current_app.cosmos_conversation_client.create_message(
-                uuid=str(uuid.uuid4()),
-                conversation_id=conversation_id,
-                user_id=user_id,
-                input_message=messages[-1],
-            )
-            if createdMessageValue == "Conversation not found":
-                raise Exception(
-                    "Conversation not found for the given conversation ID: "
-                    + conversation_id
-                    + "."
-                )
-        else:
-            raise Exception("No user message found")
-
-        # Submit request to Chat Completions for response
-        request_body = await request.get_json()
-        history_metadata["conversation_id"] = conversation_id
-        request_body["history_metadata"] = history_metadata
-        return await conversation_internal(request_body, request.headers)
-
-    except Exception as e:
-        logging.exception("Exception in /history/generate")
-        return jsonify({"error": str(e)}), 500
-
+@bp.route("/history/generate", methods=["POST"])  
+async def add_conversation():  
+    await cosmos_db_ready.wait()  
+    authenticated_user = get_authenticated_user_details(request_headers=request.headers)  
+    user_id = authenticated_user["user_principal_id"]  
+  
+    request_json = await request.get_json()  
+    conversation_id = request_json.get("conversation_id", None)  
+  
+    try:  
+        if not current_app.cosmos_conversation_client:  
+            raise Exception("CosmosDB is not configured or not working")  
+  
+        if not conversation_id:  
+            try:
+                title = await generate_title(request_json["messages"])  
+            except ValueError as ve:
+                logging.error(f"Error generating title: {ve}")
+                title = "Untitled Conversation"
+  
+            conversation_dict = await current_app.cosmos_conversation_client.create_conversation(  
+                user_id=user_id, title=title  
+            )  
+            conversation_id = conversation_dict["id"]  
+        else:  
+            conversation = await current_app.cosmos_conversation_client.get_conversation(user_id, conversation_id)  
+            if not conversation:  
+                title = await generate_title(request_json["messages"])  
+                conversation_dict = await current_app.cosmos_conversation_client.create_conversation(  
+                    user_id=user_id, title=title  
+                )  
+                conversation_id = conversation_dict["id"]  
+  
+        messages = request_json["messages"]  
+        if len(messages) > 0 and messages[-1]["role"] == "user":  
+            await current_app.cosmos_conversation_client.create_message(  
+                uuid=str(uuid.uuid4()),  
+                conversation_id=conversation_id,  
+                user_id=user_id,  
+                input_message=messages[-1],  
+            )  
+        else:  
+            raise Exception("No user message found")  
+  
+        request_body = await request.get_json()  
+        request_body["history_metadata"] = {"conversation_id": conversation_id}  
+        return await conversation_internal(request_body, request.headers)  
+    except Exception as e:  
+        logging.exception("Exception in /history/generate")  
+        return jsonify({"error": str(e)}), 500  
 
 @bp.route("/history/update", methods=["POST"])
 async def update_conversation():
@@ -677,6 +672,7 @@ async def update_conversation():
         ## Format the incoming message object in the "chat/completions" messages format
         ## then write it to the conversation history in cosmos
         messages = request_json["messages"]
+        logging.debug(f"Updating conversation {conversation_id} with messages: {messages}")
         if len(messages) > 0 and messages[-1]["role"] == "assistant":
             if len(messages) > 1 and messages[-2].get("role", None) == "tool":
                 # write the tool message first
@@ -801,21 +797,89 @@ async def list_conversations():
     authenticated_user = get_authenticated_user_details(request_headers=request.headers)
     user_id = authenticated_user["user_principal_id"]
 
-    ## make sure cosmos is configured
     if not current_app.cosmos_conversation_client:
         raise Exception("CosmosDB is not configured or not working")
 
-    ## get the conversations from cosmos
-    conversations = await current_app.cosmos_conversation_client.get_conversations(
-        user_id, offset=offset, limit=25
-    )
-    if not isinstance(conversations, list):
-        return jsonify({"error": f"No conversations for {user_id} were found"}), 404
+    try:
+        conversations = await current_app.cosmos_conversation_client.get_conversations(
+            user_id, offset=offset, limit=25
+        )
+        if not conversations:
+            # Return an empty list instead of a 404
+            return jsonify([]), 200
 
-    ## return the conversation ids
+        return jsonify(conversations), 200
+    except Exception as e:
+        logging.exception("Exception in /history/list")
+        return jsonify({"error": str(e)}), 500
 
-    return jsonify(conversations), 200
+@bp.route("/conversation/upload", methods=["POST"])
+async def upload_file_and_start_chat():
+    """
+    Endpoint to upload a file and initialize a chat session.
+    """
+    await cosmos_db_ready.wait()
+    authenticated_user = get_authenticated_user_details(request_headers=request.headers)
+    user_id = authenticated_user["user_principal_id"]
 
+    # Check if a file is included in the request
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    uploaded_file = request.files["file"]
+
+    # Validate file size (optional)
+    max_file_size = 10 * 1024 * 1024  # 10 MB
+    if len(uploaded_file.read()) > max_file_size:
+        return jsonify({"error": "File size exceeds the limit of 10 MB"}), 413
+
+    # Reset file pointer after size check
+    uploaded_file.seek(0)
+
+    # Read and process the file content
+    try:
+        file_content = uploaded_file.read().decode("utf-8")
+    except Exception as e:
+        logging.exception("Failed to read uploaded file")
+        return jsonify({"error": "Invalid file format"}), 400
+
+    # Initialize a new conversation
+    try:
+        # Ensure CosmosDB is configured
+        if not current_app.cosmos_conversation_client:
+            raise Exception("CosmosDB is not configured or not working")
+
+        # Create a new conversation
+        title = f"File: {uploaded_file.filename}"
+        conversation_dict = await current_app.cosmos_conversation_client.create_conversation(
+            user_id=user_id, title=title
+        )
+        conversation_id = conversation_dict.get("id")
+        if not conversation_id:
+            raise Exception("Failed to create conversation in CosmosDB")
+
+        # Add the file content as the first message in the conversation
+        initial_message = {
+            "role": "user",
+            "content": f"File uploaded: {uploaded_file.filename}\n\n{file_content}",
+        }
+        await current_app.cosmos_conversation_client.create_message(
+            uuid=str(uuid.uuid4()),
+            conversation_id=conversation_id,
+            user_id=user_id,
+            input_message=initial_message,
+        )
+
+        # Return the conversation ID and metadata
+        return jsonify({
+            "message": "File uploaded and chat session initialized",
+            "conversation_id": conversation_id,
+            "title": title,
+        }), 200
+
+    except Exception as e:
+        logging.exception("Exception in /conversation/upload")
+        return jsonify({"error": str(e)}), 500
 
 @bp.route("/history/read", methods=["POST"])
 async def get_conversation():
@@ -1036,26 +1100,31 @@ async def ensure_cosmos():
 
 
 async def generate_title(conversation_messages) -> str:
-    ## make sure the messages are sorted by _ts descending
-    title_prompt = "Summarize the conversation so far into a 4-word or less title. Do not use any quotation marks or punctuation. Do not include any other commentary or description."
-
-    messages = [
+    # Ensure all messages have the required keys
+    valid_messages = [
         {"role": msg["role"], "content": msg["content"]}
         for msg in conversation_messages
+        if "role" in msg and "content" in msg
     ]
-    messages.append({"role": "user", "content": title_prompt})
+
+    if not valid_messages:
+        raise ValueError("No valid messages found to generate a title")
+
+    title_prompt = "Summarize the conversation so far into a 4-word or less title. Do not use any quotation marks or punctuation. Do not include any other commentary or description."
+
+    valid_messages.append({"role": "user", "content": title_prompt})
 
     try:
         azure_openai_client = await init_openai_client()
         response = await azure_openai_client.chat.completions.create(
-            model=app_settings.azure_openai.model, messages=messages, temperature=1, max_tokens=64
+            model=app_settings.azure_openai.model, messages=valid_messages, temperature=1, max_tokens=64
         )
 
         title = response.choices[0].message.content
         return title
     except Exception as e:
-        logging.exception("Exception while generating title", e)
-        return messages[-2]["content"]
+        logging.exception("Exception while generating title")
+        return "Untitled Conversation"
 
 
 app = create_app()
