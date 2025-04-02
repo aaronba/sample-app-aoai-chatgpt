@@ -1,9 +1,9 @@
-name: OMNI-TESTING-HISTORY Docker Image Publish
+name: ALPHA-GPT Docker Image Publish
 
 on:
   push:
     branches:
-    - omni-testing-history
+    - alpha-gpt
   workflow_dispatch:
 
 jobs:
