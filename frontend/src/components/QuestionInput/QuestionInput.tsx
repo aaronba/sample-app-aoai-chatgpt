@@ -120,7 +120,7 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
         onChange={onQuestionChange}
         onKeyDown={onEnterPress}
       />
-      {!OYD_ENABLED && (
+      { conversationId && !OYD_ENABLED && (
         <div className={styles.fileInputContainer}>
           <input
             type="file"
