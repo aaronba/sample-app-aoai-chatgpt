@@ -3,7 +3,7 @@ name: OMNI-IMAGE Docker Image Publish
 on:
   push:
     branches:
-    - omni-image
+    - omni-testing-history
 
 jobs:
 
