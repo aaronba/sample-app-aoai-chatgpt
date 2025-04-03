@@ -85,7 +85,7 @@ const Layout = () => {
         padding: '8px 0',
       }}
     >
-      <strong>This is a classification banner</strong>
+      <strong>This site contains dynamic content - Highest possible classified is SECRET/NOFORN</strong>
     </div>
 
 
