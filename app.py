@@ -212,7 +212,7 @@ async def init_cosmosdb_client():
     if app_settings.chat_history:
         try:
             cosmos_endpoint = (
-                f"https://{app_settings.chat_history.account}.documents.azure.us:443/"
+                f"https://{app_settings.chat_history.account}:443/"
             )
 
             if not app_settings.chat_history.account_key:
