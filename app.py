@@ -34,7 +34,8 @@ from backend.utils import (
     format_non_streaming_response,
     convert_to_pf_format,
     format_pf_non_streaming_response,
-)
+) 
+from backend.blobservice import upload_url_to_blob
 
 bp = Blueprint("routes", __name__, static_folder="static", template_folder="static")
 
@@ -211,8 +212,8 @@ async def init_cosmosdb_client():
     cosmos_conversation_client = None
     if app_settings.chat_history:
         try:
-            cosmos_endpoint = (
-                f"https://{app_settings.chat_history.account}.documents.azure.us:443/"
+            cosmos_endpoint = (                
+                f"https://{app_settings.chat_history.account}:443/"
             )
 
             if not app_settings.chat_history.account_key:
@@ -629,6 +630,19 @@ async def add_conversation():
         ## then write it to the conversation history in cosmos
         messages = request_json["messages"]
         if len(messages) > 0 and messages[-1]["role"] == "user":
+
+            # Check for images. If present, copy the base64, put int blob storage, generate a SAS Url. Replace the Base 6t4 with the SAS url.                 
+            if len(messages[-1]["content"]) > 1:
+               index=1
+               for item in messages[-1]["content"]:                    
+                    if item["type"]=="image_url":                        
+                        image_base64 = item["image_url"]["url"].split("base64,")[1]   
+                        blob_identifier = f"{conversation_id}_{user_id}_{index}"
+                        image_sas_url = await upload_url_to_blob(image_base64, blob_identifier)                        
+                        # replace the url with the SAS url
+                        item["image_url"]["url"] = image_sas_url
+                        index+=1
+
             createdMessageValue = await current_app.cosmos_conversation_client.create_message(
                 uuid=str(uuid.uuid4()),
                 conversation_id=conversation_id,

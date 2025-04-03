@@ -185,6 +185,7 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     |AZURE_SEARCH_URL_COLUMN|No||Field from your search index that contains a URL for the document, e.g. an Azure Blob Storage URI. This value is not currently used.|
     |AZURE_SEARCH_VECTOR_COLUMNS|No||List of fields in your search index that contain vector embeddings of your documents to use when formulating a bot response. Represent these as a string joined with "|", e.g. `"product_description|product_manual"`|
     |AZURE_SEARCH_PERMITTED_GROUPS_COLUMN|No||Field from your Azure AI Search index that contains AAD group IDs that determine document-level access control.|
+   
 
     When using your own data with a vector index, ensure these settings are configured on your app:
     - `AZURE_SEARCH_QUERY_TYPE`: can be `vector`, `vectorSimpleHybrid`, or `vectorSemanticHybrid`,
@@ -214,6 +215,9 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     |AZURE_COSMOSDB_MONGO_VCORE_TITLE_COLUMN|No||Field from your search index that gives a relevant title or header for your data content to display in the UI.|
     |AZURE_COSMOSDB_MONGO_VCORE_URL_COLUMN|No||Field from your search index that contains a URL for the document, e.g. an Azure Blob Storage URI. This value is not currently used.|
     |AZURE_COSMOSDB_MONGO_VCORE_VECTOR_COLUMNS|No||List of fields in your search index that contain vector embeddings of your documents to use when formulating a bot response. Represent these as a string joined with "|", e.g. `"product_description|product_manual"`|
+    |AZURE_IMAGE_UPLOAD_BLOB_STORAGE_CONNECTION_STRING|Yes| | Storage account connection string to store images attached with the question|
+    |AZURE_IMAGE_UPLOAD_BLOB_STORAGE_CONTAINER_NAME | Yes | | Storage container name to store the images attached with the question |
+    |AZURE_IMAGE_SAS_URL_TIMEOUT_HOURS| Yes| 24| The duration for the uploaded image to be accessible, in hours.|
 
     Azure Cosmos DB uses vector search by default, so ensure these settings are configured on your app:
     - `AZURE_OPENAI_EMBEDDING_NAME`: the name of your Ada (text-embedding-ada-002) model deployment on your Azure OpenAI resource.
