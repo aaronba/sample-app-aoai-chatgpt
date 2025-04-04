@@ -25,11 +25,14 @@ interface Props {
 export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conversationId }: Props) => {
   const [question, setQuestion] = useState<string>('')
   const [base64Images, setBase64Images] = useState<string[]>([]);
+  const [placeholderText, setPlaceholderText] = useState<string>('');
 
   const appStateContext = useContext(AppStateContext)
   const OYD_ENABLED = appStateContext?.state.frontendSettings?.oyd_enabled || false;
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPlaceholderText('Adding files...'); // Show placeholder text
+
     const files = event.target.files;
 
     if (files) {
@@ -58,6 +61,8 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
       }
       setBase64Images(base64Array);
     }
+
+    setPlaceholderText(''); // Hide placeholder text
   };
 
   const convertToBase64 = async (file: Blob): Promise<string> => {
@@ -120,6 +125,12 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
         onChange={onQuestionChange}
         onKeyDown={onEnterPress}
       />
+      {/* {placeholderText && (
+        <div className={styles.placeholderText}>{placeholderText}</div>
+      )} */}
+       {placeholderText && (
+        <div className={styles.placeholderText}>{placeholderText}</div>
+      )}
       {!OYD_ENABLED && (
         <div className={styles.fileInputContainer}>
           <input
@@ -134,9 +145,12 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
               className={styles.fileIcon}
               iconName={'PhotoCollection'}
               aria-label='Upload File'
-            />
+            />            
           </label>
-        </div>)}
+          
+        </div>
+      )}
+     
       {base64Images.length > 0 && base64Images.map((image, index) => (
         <img key={index} className={styles.uploadedImage} src={image} alt={`Uploaded Preview ${index + 1}`} />
       ))}
