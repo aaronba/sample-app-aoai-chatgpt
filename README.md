@@ -215,9 +215,7 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     |AZURE_COSMOSDB_MONGO_VCORE_TITLE_COLUMN|No||Field from your search index that gives a relevant title or header for your data content to display in the UI.|
     |AZURE_COSMOSDB_MONGO_VCORE_URL_COLUMN|No||Field from your search index that contains a URL for the document, e.g. an Azure Blob Storage URI. This value is not currently used.|
     |AZURE_COSMOSDB_MONGO_VCORE_VECTOR_COLUMNS|No||List of fields in your search index that contain vector embeddings of your documents to use when formulating a bot response. Represent these as a string joined with "|", e.g. `"product_description|product_manual"`|
-    |AZURE_IMAGE_UPLOAD_BLOB_STORAGE_CONNECTION_STRING|Yes| | Storage account connection string to store images attached with the question|
-    |AZURE_IMAGE_UPLOAD_BLOB_STORAGE_CONTAINER_NAME | Yes | | Storage container name to store the images attached with the question |
-    |AZURE_IMAGE_SAS_URL_TIMEOUT_HOURS| Yes| 24| The duration for the uploaded image to be accessible, in hours.|
+   
 
     Azure Cosmos DB uses vector search by default, so ensure these settings are configured on your app:
     - `AZURE_OPENAI_EMBEDDING_NAME`: the name of your Ada (text-embedding-ada-002) model deployment on your Azure OpenAI resource.
@@ -361,6 +359,9 @@ Configure your settings using the table below.
     |AZURE_COSMOSDB_CONVERSATIONS_CONTAINER|Only if using chat history||The name of the Azure Cosmos DB container used for storing chat history|
     |AZURE_COSMOSDB_ACCOUNT_KEY|Only if using chat history||The account key for the Azure Cosmos DB account used for storing chat history|
     |AZURE_COSMOSDB_ENABLE_FEEDBACK|No|False|Whether or not to enable message feedback on chat history messages|
+    |AZURE_IMAGE_UPLOAD_BLOB_STORAGE_CONNECTION_STRING|Yes| | Storage account connection string to store images attached with the question|
+    |AZURE_IMAGE_UPLOAD_BLOB_STORAGE_CONTAINER_NAME | Yes | | Storage container name to store the images attached with the question |
+    |AZURE_IMAGE_SAS_URL_TIMEOUT_HOURS| Yes| 24| The duration for the uploaded image to be accessible, in hours.|
 
 
 #### Enable Azure OpenAI function calling via Azure Functions
