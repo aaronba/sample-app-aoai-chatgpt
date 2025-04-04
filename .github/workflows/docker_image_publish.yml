@@ -1,9 +1,9 @@
-name: OMNI-IMAGE Docker Image Publish
+name: OMNI-IMAGE-OYD-COMMENT Docker Image Publish
 
 on:
   push:
     branches:
-    - omni-image
+    - omni-image-oyd-comment
   workflow_dispatch:
 
 jobs:
