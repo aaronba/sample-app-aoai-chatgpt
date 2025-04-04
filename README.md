@@ -352,6 +352,9 @@ Configure your settings using the table below.
 
 4. Configure data source settings as described in the table below.
 
+    **note** - When creating a CosmoDB, make sure the partition key is `userId`
+
+
     | App Setting | Required? | Default Value | Note |
     | --- | --- | --- | ------------- |
     |AZURE_COSMOSDB_ACCOUNT|Only if using chat history||The name of the Azure Cosmos DB account used for storing chat history|

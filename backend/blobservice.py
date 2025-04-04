@@ -55,3 +55,36 @@ async def upload_url_to_blob(base64_image, blob_identifier):
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
+
+
+async def delete_blobs_by_conversation_id(conversation_id):
+    """
+    Deletes all blobs in Azure Blob Storage whose names start with the given conversation ID.
+
+    :param conversation_id: The conversation ID to filter blobs by.
+    """
+    try:
+        # Get account details from environment variables
+        connection_string = app_settings.image_file.upload_blob_storage_connection_string
+        container_name = app_settings.image_file.upload_blob_storage_container_name
+
+        if not connection_string or not container_name:
+            raise ValueError("Missing Azure Storage configuration in environment variables.")
+
+        # Connect to the Blob Service Client
+        async with AsyncBlobServiceClient.from_connection_string(connection_string) as blob_service_client:
+
+            # Get the container client
+            container_client = blob_service_client.get_container_client(container_name)
+
+            # List blobs whose names start with the conversation ID
+            async for blob in container_client.list_blobs(name_starts_with=conversation_id):
+                # Delete each blob
+                await container_client.delete_blob(blob.name)
+                print(f"Deleted blob: {blob.name}")
+
+    except Exception as e:
+        print(f"An error occurred while deleting blobs: {e}")
+
+
+

@@ -35,7 +35,7 @@ from backend.utils import (
     convert_to_pf_format,
     format_pf_non_streaming_response,
 ) 
-from backend.blobservice import upload_url_to_blob
+from backend.blobservice import delete_blobs_by_conversation_id, upload_url_to_blob
 
 bp = Blueprint("routes", __name__, static_folder="static", template_folder="static")
 
@@ -794,6 +794,9 @@ async def delete_conversation():
             user_id, conversation_id
         )
 
+        ## now delete the files for this conversation from blob
+        await delete_blobs_by_conversation_id(conversation_id)
+
         return (
             jsonify(
                 {
@@ -956,6 +959,9 @@ async def delete_all_conversations():
             deleted_conversation = await current_app.cosmos_conversation_client.delete_conversation(
                 user_id, conversation["id"]
             )
+
+            ## now delete the files for this conversation from blob
+            await delete_blobs_by_conversation_id(conversation["id"])
         return (
             jsonify(
                 {
@@ -993,6 +999,9 @@ async def clear_messages():
         deleted_messages = await current_app.cosmos_conversation_client.delete_messages(
             conversation_id, user_id
         )
+
+        ## now delete the files for this conversation from blob
+        await delete_blobs_by_conversation_id(conversation_id)
 
         return (
             jsonify(
