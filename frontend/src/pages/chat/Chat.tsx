@@ -314,13 +314,18 @@ const Chat = () => {
     setShowLoadingMessage(true)
     const abortController = new AbortController()
     abortFuncs.current.unshift(abortController)
-    const questionContent = typeof question === 'string' ? question : [{ type: "text", text: question[0].text }, { type: "image_url", image_url: { url: question[1].image_url.url, detail:"high" } }]
+
+    // const questionContent = typeof question === 'string' ? question : [{ type: "text", text: question[0].text }, { type: "image_url", image_url: { url: question[1].image_url.url, detail:"high" } }]
+    const questionContent   = Array.isArray(question) && question.length>=2
+    ? question.map((item) => ('text' in item ? { type: "text", text: item.text } : { type: "image_url", image_url: { url: item.image_url.url, detail:"high"} }))
+    : [{ type: "text", text: question as string }];
+
     question = typeof question !== 'string' && question[0]?.text?.length > 0 ? question[0].text : question
 
     const userMessage: ChatMessage = {
       id: uuid(),
       role: 'user',
-      content: questionContent as string,
+      content: questionContent as ChatMessage["content"],
       date: new Date().toISOString()
     }
 
@@ -955,7 +960,7 @@ const Chat = () => {
                 placeholder="Type a new question..."
                 disabled={isLoading}
                 onSend={(question, id) => {                  
-                  appStateContext?.state.isCosmosDBAvailable?.cosmosDB && OYD_ENABLED   
+                  appStateContext?.state.isCosmosDBAvailable?.cosmosDB //&& OYD_ENABLED   
                     ? makeApiRequestWithCosmosDB(question, id)
                     : makeApiRequestWithoutCosmosDB(question, id)
                 }}

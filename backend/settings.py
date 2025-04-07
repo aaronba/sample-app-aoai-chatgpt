@@ -33,6 +33,18 @@ DOTENV_PATH = os.environ.get(
 MINIMUM_SUPPORTED_AZURE_OPENAI_PREVIEW_API_VERSION = "2024-05-01-preview"
 
 
+class _ImageFileSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="AZURE_IMAGE_",
+        env_file=DOTENV_PATH,
+        extra="ignore",
+        env_ignore_empty=True
+    )
+
+    upload_blob_storage_connection_string: Optional[str] = None
+    upload_blob_storage_container_name: Optional[str] = None 
+    sas_url_timeout_hours: Optional[int] = 24
+
 class _UiSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="UI_",
@@ -768,6 +780,7 @@ class _AppSettings(BaseModel):
     azure_openai: _AzureOpenAISettings = _AzureOpenAISettings()
     search: _SearchCommonSettings = _SearchCommonSettings()
     ui: Optional[_UiSettings] = _UiSettings()
+    image_file: Optional[_ImageFileSettings] = _ImageFileSettings()
     
     # Constructed properties
     chat_history: Optional[_ChatHistorySettings] = None

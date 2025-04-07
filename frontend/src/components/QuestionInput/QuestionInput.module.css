@@ -96,3 +96,18 @@
   width: 150px;
   height: 100px;
 }
+
+.placeholderText {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bolder;
+  color: #424242;
+  margin-top: 5px; 
+  z-index: 1;
+  white-space: nowrap;
+  color:darkblue
+}
