@@ -637,7 +637,7 @@ async def add_conversation():
                for item in messages[-1]["content"]:                    
                     if item["type"]=="image_url":                        
                         image_base64 = item["image_url"]["url"].split("base64,")[1]   
-                        blob_identifier = f"{conversation_id}_{user_id}_{uuid.uuid4()}.png"
+                        blob_identifier = f"{conversation_id}_{user_id}_{uuid.uuid4()}"
                         image_sas_url = await upload_url_to_blob(image_base64, blob_identifier)                        
                         # replace the url with the SAS url
                         item["image_url"]["url"] = image_sas_url
