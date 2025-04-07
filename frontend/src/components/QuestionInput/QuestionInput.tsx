@@ -132,8 +132,8 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
           <label htmlFor="fileInput" className={styles.fileLabel} aria-label='Upload File'>
             <FontIcon
               className={styles.fileIcon}
-              iconName={'PhotoCollection'}
-              aria-label='Upload File'
+              iconName={'BulkUpload'}
+              aria-label='Upload Files'
             />
           </label>
         </div>)}
