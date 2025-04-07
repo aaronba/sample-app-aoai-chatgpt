@@ -633,15 +633,15 @@ async def add_conversation():
 
             # Check for images. If present, copy the base64, put int blob storage, generate a SAS Url. Replace the Base 6t4 with the SAS url.                 
             if len(messages[-1]["content"]) > 1:
-               index=1
+                
                for item in messages[-1]["content"]:                    
                     if item["type"]=="image_url":                        
                         image_base64 = item["image_url"]["url"].split("base64,")[1]   
-                        blob_identifier = f"{conversation_id}_{user_id}_{index}"
+                        blob_identifier = f"{conversation_id}_{user_id}_{uuid.uuid4()}.png"
                         image_sas_url = await upload_url_to_blob(image_base64, blob_identifier)                        
                         # replace the url with the SAS url
                         item["image_url"]["url"] = image_sas_url
-                        index+=1
+                         
 
             createdMessageValue = await current_app.cosmos_conversation_client.create_message(
                 uuid=str(uuid.uuid4()),
