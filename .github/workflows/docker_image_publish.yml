@@ -1,9 +1,9 @@
-name: OMNI-IMAGE Docker Image Publish
+name: OMNI-TESTING-HISTORY Docker Image Publish
 
 on:
   push:
     branches:
-    - omni-image
+    - omni-testing-history
   workflow_dispatch:
 
 jobs:
