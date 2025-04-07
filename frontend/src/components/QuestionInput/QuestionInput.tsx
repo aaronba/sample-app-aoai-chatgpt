@@ -125,9 +125,6 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
         onChange={onQuestionChange}
         onKeyDown={onEnterPress}
       />
-      {/* {placeholderText && (
-        <div className={styles.placeholderText}>{placeholderText}</div>
-      )} */}
        {placeholderText && (
         <div className={styles.placeholderText}>{placeholderText}</div>
       )}

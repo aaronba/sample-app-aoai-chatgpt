@@ -75,12 +75,26 @@ const Layout = () => {
 
   return (
     <div className={styles.layout}>
+    {/* Classification Banner */}
+    <div
+      style={{
+        backgroundColor: 'red',
+        color: 'white',
+        textAlign: 'center',
+        width: '100%',
+        padding: '8px 0',
+      }}
+    >
+      <strong>This site contains dynamic content - Highest possible classified is SECRET/NOFORN</strong>
+    </div>
+
+
       <header className={styles.header} role={'banner'}>
         <Stack horizontal verticalAlign="center" horizontalAlign="space-between">
           <Stack horizontal verticalAlign="center">
             <img src={logo} className={styles.headerIcon} aria-hidden="true" alt="" />
             <Link to="/" className={styles.headerTitleContainer}>
-              <h1 className={styles.headerTitle}>{ui?.title}</h1>
+              <h1 className={styles.headerTitle}></h1>
             </Link>
           </Stack>
           <Stack horizontal tokens={{ childrenGap: 4 }} className={styles.shareButtonContainer}>

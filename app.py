@@ -212,7 +212,7 @@ async def init_cosmosdb_client():
     cosmos_conversation_client = None
     if app_settings.chat_history:
         try:
-            cosmos_endpoint = (                
+            cosmos_endpoint = (
                 f"https://{app_settings.chat_history.account}:443/"
             )
 

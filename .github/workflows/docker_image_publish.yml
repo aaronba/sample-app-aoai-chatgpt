@@ -1,9 +1,10 @@
-name: OMNI-IMAGE-OYD-COMMENT Docker Image Publish
+
+name: ALPHA-GPT Docker Image Publish
 
 on:
   push:
     branches:
-    - omni-image-oyd-comment
+    - alpha-gpt
   workflow_dispatch:
 
 jobs:
