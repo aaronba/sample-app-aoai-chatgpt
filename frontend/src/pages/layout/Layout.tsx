@@ -20,6 +20,8 @@ const Layout = () => {
   const [logo, setLogo] = useState('')
   const appStateContext = useContext(AppStateContext)
   const ui = appStateContext?.state.frontendSettings?.ui
+  const classificationBanner = appStateContext?.state?.frontendSettings?.ui?.classification_banner || 'This is a test classification banner (Default from Layout)'
+
 
   const handleShareClick = () => {
     setIsSharePanelOpen(true)
@@ -85,7 +87,7 @@ const Layout = () => {
         padding: '8px 0',
       }}
     >
-      <strong>This site contains dynamic content - Highest possible classified is SECRET/NOFORN</strong>
+     <strong>{classificationBanner}</strong>
     </div>
 
 

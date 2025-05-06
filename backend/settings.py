@@ -61,6 +61,7 @@ class _UiSettings(BaseSettings):
     favicon: str = "/favicon.ico"
     show_share_button: bool = True
     show_chat_history_button: bool = True
+    classification_banner: str = Field(default="This is classification banner (from settings)", env="UI_CLASSIFICATION_BANNER")
 
 
 class _ChatHistorySettings(BaseSettings):
