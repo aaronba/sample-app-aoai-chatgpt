@@ -1,9 +1,9 @@
-name: OMNI-IMAGE-OYD-COMMENT Docker Image Publish
+name: KIDAMBI-LOADING-TEXT Docker Image Publish
 
 on:
   push:
     branches:
-    - omni-image-oyd-comment
+    - kidambi-loading-text
   workflow_dispatch:
 
 jobs:
